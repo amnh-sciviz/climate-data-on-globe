@@ -20,20 +20,46 @@ VELOCITY_MULTIPLIER = 1.0
 ds = Dataset(INPUT_FILE, 'r')
 
 # Extract data from NetCDF file
-depth = 0
 us = ds.variables['u'][:]
 vs = ds.variables['v'][:]
+depth = 0
 
 timeCount = len(us) # this should be 72
 lats = len(us[0][depth]) # this should be 1201
 lngs = len(us[0][depth][0]) # this should be 481
 print "%s measurements found with %s degrees (lng) by %s degrees (lat)" % (timeCount, lngs, lats)
 
+def mean(data):
+    n = len(data)
+    if n < 1:
+        return 0
+    else:
+        return 1.0 * sum(data) / n
+
+def uvDataAt(month, lng, lat, udata, vdata):
+    depth = 0
+    tLen = len(udata)
+    mus = []
+    mvs = []
+    for t in range(tLen):
+        tmonth = int(round(1.0 * t / (tLen-1) * 11.0))
+        if tmonth == month:
+            # retrieve velocity
+            u = udata[t][depth][lat][lng]
+            v = vdata[t][depth][lat][lng]
+            if np.isnan(u) or u is ma.masked or np.isnan(v) or v is ma.masked:
+                continue
+            mus.append(u)
+            mvs.append(u)
+    u = mean(mus)
+    v = mean(mvs)
+    return (u, v)
+
 print "Target particles: %s" % PARTICLES
 data = []
 
 # go through each time interval
-for t in range(timeCount):
+for month in range(12):
 
     particles = []
 
@@ -51,20 +77,15 @@ for t in range(timeCount):
 
             for j in range(POINTS_PER_PARTICLE):
                 # retrieve velocity
-                u = us[t][depth][lat][lng]
-                v = vs[t][depth][lat][lng]
-                if np.isnan(u) or u is ma.masked:
-                    u = 0
-                if np.isnan(v) or v is ma.masked:
-                    v = 0
+                u, v = uvDataAt(month, lng, lat, us, vs)
 
                 # particle is standing still
                 if u == 0 and v == 0:
                     break
 
                 # move particle based on velocity
-                x += u * VELOCITY_MULTIPLIER
-                y += v * VELOCITY_MULTIPLIER
+                x += int(round(u * VELOCITY_MULTIPLIER))
+                y += int(round(v * VELOCITY_MULTIPLIER))
 
                 # check for bounds
                 if y < 0 or y >= HEIGHT:
@@ -91,7 +112,7 @@ for t in range(timeCount):
     data.append(particles)
 
     sys.stdout.write('\r')
-    sys.stdout.write("%s%%" % round(1.0*t/(timeCount-1)*100,1))
+    sys.stdout.write("%s%%" % round(1.0*month/11*100,1))
     sys.stdout.flush()
 
 jsonOut = {
