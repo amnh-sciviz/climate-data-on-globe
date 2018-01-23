@@ -18,7 +18,7 @@ parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=120, hel
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=60, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=50, help="Points per particle")
 parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=1.0, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_THRESHOLD", type=float, default=0.333, help="Percentage of particles to show depending on curve distance")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=1200, help="Number of particles to display")
 
 args = parser.parse_args()
 
@@ -28,12 +28,15 @@ PARTICLES_PER_ROW = args.PARTICLES_PER_ROW
 PARTICLES_PER_COL = args.PARTICLES_PER_COL
 POINTS_PER_PARTICLE = args.POINTS_PER_PARTICLE
 VELOCITY_MULTIPLIER = args.VELOCITY_MULTIPLIER
-DISPLAY_THRESHOLD = args.DISPLAY_THRESHOLD
+DISPLAY_PARTICLES = args.DISPLAY_PARTICLES
 
 PARTICLES = PARTICLES_PER_COL * PARTICLES_PER_ROW
 LAT_RANGE = (-80, 80) # latitude is represented from -80° to 80° with a 1/3° resolution
 LNG_RANGE = (20, 420) # longitude is represented from  as 20° to 420°
 PRECISION = 3
+
+if PARTICLES < DISPLAY_PARTICLES:
+    DISPLAY_PARTICLES = PARTICLES
 
 ds = Dataset(INPUT_FILE, 'r')
 
@@ -82,69 +85,72 @@ for month in range(12):
             lat = getLat(yp, LAT_RANGE)
             lng = round(lng, PRECISION)
             lat = round(lat, PRECISION)
-            coordinates = [(lng, lat)]
+            coordinates = []
             cDistance = 0
+            particleIndex = col * PARTICLES_PER_ROW + row
 
-            xp = normLon(lng, LNG_RANGE)
-            yp = normLat(lat, LAT_RANGE)
-            ui = int(round(xp * (lngs-1)))
-            vi = int(round(yp * (lats-1)))
-
-            for j in range(POINTS_PER_PARTICLE-1):
-                # retrieve velocity
+            for j in range(POINTS_PER_PARTICLE):
+                xp = normLon(lng, LNG_RANGE)
+                yp = normLat(lat, LAT_RANGE)
+                ui = int(round(xp * (lngs-1)))
+                vi = int(round(yp * (lats-1)))
                 u, v = uvDataAt(month, ui, vi, us, vs)
+                mag = math.sqrt(u * u + v * v)
+
+                # add point
+                coordinates.append((lng, lat, mag))
 
                 # particle is standing still
-                if u == 0 and v == 0:
-                    break
+                # if u == 0 and v == 0:
+                #     break
 
                 # move particle based on velocity
-                # mag = math.sqrt(u * u + v * v)
                 lng += u * VELOCITY_MULTIPLIER
                 lat += (-1.0 * v) * VELOCITY_MULTIPLIER
 
                 # if lng < -180 or lng > 180:
                 #     break
-                if lat < LAT_RANGE[0] or lat > LAT_RANGE[1]:
-                    break
+                # if lat < LAT_RANGE[0] or lat > LAT_RANGE[1]:
+                #     break
+                lat = clamp(lat, LAT_RANGE[0], LAT_RANGE[1])
 
-                # add point
-                coordinates.append((lng, lat))
-                cDistance += distance(coordinates[j], (lng, lat))
+                # keep track of distance for the first month
+                if mag > 0 and month <= 0 and j > 0:
+                    cDistance += distance(coordinates[j-1], (lng, lat))
 
-                # retrieve new lat/lng
-                xp = normLon(lng, LNG_RANGE)
-                yp = normLat(lat, LAT_RANGE)
-                ui = int(round(xp * (lngs-1)))
-                vi = int(round(yp * (lats-1)))
-
-            # only add curves that move
-            if len(coordinates) > POINTS_PER_PARTICLE * 0.99:
-                particles.append({
-                    "points": coordinates,
-                    "distance": cDistance
-                })
+            particles.append({
+                "index": particleIndex,
+                "points": coordinates,
+                "distance": cDistance
+            })
 
             sys.stdout.write('\r')
-            sys.stdout.write("%s%%" % round(1.0*(col * PARTICLES_PER_ROW + row)/PARTICLES*100,1))
+            sys.stdout.write("%s%%" % round(1.0*particleIndex/PARTICLES*100,1))
             sys.stdout.flush()
 
-    pLen = len(particles)
-    particles = sorted(particles, key=lambda k: k['distance'], reverse=True)
-    displayLen = int(round(pLen * DISPLAY_THRESHOLD))
-    particles = particles[:displayLen]
-    particles = [p["points"] for p in particles]
-
-    print "Actual particles: %s" % pLen
-    print "Display particles: %s" % displayLen
-    data.append(particles)
+    # for the first month, pick the longest paths and slice
+    if month <= 0:
+        pLen = len(particles)
+        particles = sorted(particles, key=lambda k: k['distance'], reverse=True)
+        addParticles = particles[:DISPLAY_PARTICLES]
+        print "Actual particles: %s" % pLen
+        print "Display particles: %s" % DISPLAY_PARTICLES
+    # for subsequent months, pick particles based on the longest path from the first month
+    else:
+        baseParticles = data[0]
+        addParticles = []
+        for p in baseParticles:
+            index = p["index"]
+            addParticles.append(particles[index])
+    data.append(addParticles)
 
     # Draw sample image
     # WIDTH = 1200
     # HEIGHT = 600
     # im = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
     # draw = ImageDraw.Draw(im)
-    # for coordinates in particles:
+    # for particle in addParticles:
+    #     coordinates = particle["points"]
     #     curve = [(norm(c[0], -180, 180) * WIDTH, norm(c[1], -90, 90) * HEIGHT) for c in coordinates]
     #     draw.line(curve, fill=255)
     # del draw
@@ -152,14 +158,33 @@ for month in range(12):
     # sys.exit(1)
     # break
 
+# Flatten data to make file size as small as possible
+intervalLen = len(data)
+dataLen = intervalLen * DISPLAY_PARTICLES * POINTS_PER_PARTICLE
+print "Flattening data with %s data points..." % dataLen
+lonData = [0 for i in range(dataLen)]
+latData = [0 for i in range(dataLen)]
+magData = [0 for i in range(dataLen)]
+for i, interval in enumerate(data):
+    for j, particle in enumerate(interval):
+        for k, point in enumerate(particle["points"]):
+            index = i * DISPLAY_PARTICLES * POINTS_PER_PARTICLE + j * POINTS_PER_PARTICLE + k
+            lonData[index] = int(point[0]*PRECISION)
+            latData[index] = int(point[1]*PRECISION)
+            magData[index] = int(point[2]*PRECISION)
+
 jsonOut = {
-    "yearInterval": timeCount,
-    "lats": lats,
-    "lngs": lngs,
-    "data": data
+    "intervals": intervalLen,
+    "pointsPerParticle": POINTS_PER_PARTICLE,
+    "particleCount": DISPLAY_PARTICLES,
+    "multiplier": 1.0 / PRECISION,
+    "lon": lonData,
+    "lat": latData,
+    "mag": magData
 }
 
 # Write to file
+print "Writing data to file..."
 with open(OUTPUT_FILE, 'w') as f:
     json.dump(jsonOut, f)
-    print "Wrote %s items to %s" % (timeCount, OUTPUT_FILE)
+    print "Wrote data to %s" % OUTPUT_FILE
