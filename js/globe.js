@@ -18,6 +18,13 @@ var Globe = (function() {
 
     this.loadEarth();
     this.loadGeojson(this.opt.geojson);
+    this.loadData(this.opt.data);
+  };
+
+  Globe.prototype.loadData = function(data) {
+    this.intervals = this.opt.intervals;
+    this.particleCount = this.opt.particleCount;
+    this.pointsPerParticle = this.opt.pointsPerParticle;
   };
 
   Globe.prototype.loadEarth = function() {

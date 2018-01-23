@@ -9,10 +9,28 @@ var App = (function() {
 
   function getPNG(filename) {
     var deferred = $.Deferred();
+    var img = new Image();
 
-    setTimeout(function(){
-      deferred.resolve();
-    }, 100);
+    var loaded = function(img){
+      var canvas = document.createElement('canvas');
+      var w = img.width;
+      var h = img.height;
+      canvas.width = w;
+      canvas.height = h;
+      var context = canvas.getContext('2d');
+      context.drawImage(img, 0, 0, w, h);
+      var data = context.getImageData(0, 0, w, h).data;
+      deferred.resolve(data);
+    };
+
+    img.src = filename;
+    if (img.complete) {
+      loaded(img);
+    } else {
+      img.addEventListener('load', function(){
+        loaded(img);
+      });
+    }
 
     return deferred.promise();
   }
