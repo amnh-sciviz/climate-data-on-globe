@@ -13,8 +13,24 @@ var Globe = (function() {
     this.init();
   }
 
+  function lerp(a, b, percent) {
+    return (1.0*b - a) * percent + a;
+  }
+
+  function toSphere(lon, lat, radius) {
+    var phi = (90-lat) * (Math.PI/180);
+    var theta = (lon+180) * (Math.PI/180);
+    var x = -(radius * Math.sin(phi) * Math.cos(theta));
+    var y = (radius * Math.cos(phi));
+    var z = (radius * Math.sin(phi) * Math.sin(theta));
+    return [x, y, z];
+  }
+
   Globe.prototype.init = function(){
     this.$el = $(this.opt.el);
+    this.intervals = this.opt.intervals;
+    this.particleCount = this.opt.particleCount;
+    this.pointsPerParticle = this.opt.pointsPerParticle;
 
     this.loadEarth();
     this.loadGeojson(this.opt.geojson);
@@ -22,9 +38,40 @@ var Globe = (function() {
   };
 
   Globe.prototype.loadData = function(data) {
-    this.intervals = this.opt.intervals;
-    this.particleCount = this.opt.particleCount;
-    this.pointsPerParticle = this.opt.pointsPerParticle;
+    var intervals = this.intervals;
+    var particleCount = this.particleCount;
+    var pointsPerParticle = this.pointsPerParticle;
+    var radius = this.opt.radius * 1.001;
+
+    var geo = new THREE.Geometry();
+
+    var prev = false;
+    for (var i=0; i<pointsPerParticle; i++) {
+      var start = i * 4;
+      var lon = lerp(-180, 180, data[start] / 255.0);
+      var lat = lerp(-90, 90, data[start+1] / 255.0);
+      var mag = data[start+2] / 255.0;
+      var point = toSphere(lon, lat, radius);
+
+      if (prev) {
+        geo.vertices.push(new THREE.Vector3(prev[0], prev[1], prev[2]));
+        geo.vertices.push(new THREE.Vector3(point[0], point[1], point[2]));
+        geo.colors.push(new THREE.Color(mag, mag, mag));
+        geo.colors.push(new THREE.Color(mag, mag, mag));
+      }
+
+      prev = point;
+    }
+
+    var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+    var line = new THREE.LineSegments(geo, mat);
+
+    this.scene.add(line);
+
+    // geometry.colors[ 0 ].setRGB( 1, 0, 0 );
+    // geometry.colorsNeedUpdate = true;
+    // material.vertexColors = THREE.VertexColors;
+    // material.needsUpdate = true;
   };
 
   Globe.prototype.loadEarth = function() {
