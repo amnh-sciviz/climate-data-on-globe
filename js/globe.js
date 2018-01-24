@@ -8,7 +8,9 @@ var Globe = (function() {
       near: 0.01,
       far: 1000,
       radius: 0.5,
-      minAlpha: 0.2
+      minMag: 0.2,
+      precision: 0.01,
+      animationMs: 2000
     };
     this.opt = $.extend({}, defaults, options);
     this.init();
@@ -36,29 +38,36 @@ var Globe = (function() {
     this.intervals = this.opt.intervals;
     this.particleCount = this.opt.particleCount;
     this.pointsPerParticle = this.opt.pointsPerParticle;
+    this.data = this.opt.data;
+
+    var offsets = _.range(this.particleCount);
+    this.offsets = _.map(offsets, function(v){ return Math.random(); });
 
     this.loadEarth();
     this.loadGeojson(this.opt.geojson);
-    this.loadData(this.opt.data);
+    this.loadData();
   };
 
-  Globe.prototype.loadData = function(data) {
+  Globe.prototype.loadData = function() {
+    var data = this.data;
     var intervals = this.intervals;
     var particleCount = this.particleCount;
     var pointsPerParticle = this.pointsPerParticle;
+    var offsets = this.offsets;
     var radius = this.opt.radius * 1.001;
-    var minAlpha = this.opt.minAlpha;
+    var minMag = this.opt.minMag;
+    var precision = this.opt.precision;
 
     var geo = new THREE.Geometry();
 
     var prev = false;
     var prevMag = false;
-    var intervalOffset = 0;
+    var prevOffset = false;
     var rowLength = pointsPerParticle * intervals * 4;
     var offsetPerParticle = rowLength * 2;
-    var precision = 0.01;
 
     for (var i=0; i<particleCount; i++) {
+      var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
         var start = i * offsetPerParticle + j * 4;
         var lon = round(data[start] / 255.0, precision);
@@ -70,7 +79,10 @@ var Globe = (function() {
 
         lon = lerp(-270, 90, lon+lonDec);
         lat = lerp(90, -90, lat+latDec);
-        mag = Math.max(minAlpha, mag + magDec);
+        mag = Math.max(minMag, mag + magDec);
+
+        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset;
+        pOffset = 1.0 - pOffset % 1.0;
 
         var point = toSphere(lon, lat, radius);
 
@@ -84,25 +96,23 @@ var Globe = (function() {
           } else {
             // mag = 0.5;
             // prevMag = 0.5;
-            geo.colors.push(new THREE.Color(prevMag, prevMag, prevMag));
-            geo.colors.push(new THREE.Color(mag, mag, mag));
+            geo.colors.push(new THREE.Color(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset));
+            geo.colors.push(new THREE.Color(mag*pOffset, mag*pOffset, mag*pOffset));
           }
         }
 
         prev = point.slice(0);
         prevMag = mag;
+        prevOffset = pOffset;
       }
     }
 
     var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
     var line = new THREE.LineSegments(geo, mat);
 
+    this.lineGeo = geo;
+    this.lineMat = mat;
     this.scene.add(line);
-
-    // geometry.colors[ 0 ].setRGB( 1, 0, 0 );
-    // geometry.colorsNeedUpdate = true;
-    // material.vertexColors = THREE.VertexColors;
-    // material.needsUpdate = true;
   };
 
   Globe.prototype.loadEarth = function() {
@@ -137,18 +147,19 @@ var Globe = (function() {
 
     // init globe
     var geometry = new THREE.SphereGeometry(radius, 64, 64);
-    var material = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    var material = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
     this.earth = new THREE.Mesh(geometry, material);
     this.earth.rotation.y = Math.PI;
 
     // equator
-    var eqGeo = new THREE.CircleGeometry(radius*1.0001, 64);
-    eqGeo.vertices.shift();
-    eqGeo.vertices.push(eqGeo.vertices[0].clone());
-    var eqMat = new THREE.LineBasicMaterial( { color: 0x00f6ff } );
-    var equator = new THREE.Line(eqGeo, eqMat);
-    equator.rotation.x = Math.PI / 2;
+    // var eqGeo = new THREE.CircleGeometry(radius*1.0001, 64);
+    // eqGeo.vertices.shift();
+    // eqGeo.vertices.push(eqGeo.vertices[0].clone());
+    // var eqMat = new THREE.LineBasicMaterial( { color: 0x00f6ff } );
+    // var equator = new THREE.Line(eqGeo, eqMat);
+    // equator.rotation.x = Math.PI / 2;
+    // this.scene.add(equator);
 
     // add north arrow
     var dir = new THREE.Vector3(0, 1, 0);
@@ -163,14 +174,12 @@ var Globe = (function() {
     hex = 0xff0000;
     var southArrow = new THREE.ArrowHelper(dir, origin, length, hex);
     this.earth.add(southArrow);
-
     this.scene.add(this.earth);
-    this.scene.add(equator);
   };
 
   Globe.prototype.loadGeojson = function(geojsonData){
     var opt = {
-      color: 'white'
+      color: 0x555555
     };
     var radius = this.opt.radius * 1.001;
 
@@ -187,8 +196,60 @@ var Globe = (function() {
   };
 
   Globe.prototype.render = function(){
+    var animationMs = this.opt.animationMs;
+    var now = new Date();
+    var progress = (now % animationMs) / animationMs
+    this.updateGlobeData(progress);
+
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
+  };
+
+  Globe.prototype.updateGlobeData = function(globalOffset){
+    var mat = this.lineMat;
+    var geo = this.lineGeo;
+    var data = this.data;
+    var currentInterval = 0;
+
+    var intervals = this.intervals;
+    var particleCount = this.particleCount;
+    var pointsPerParticle = this.pointsPerParticle;
+    var offsets = this.offsets;
+    var minMag = this.opt.minMag;
+    var precision = this.opt.precision;
+
+    var prevMag = false;
+    var prevOffset = false;
+    var rowLength = pointsPerParticle * intervals * 4;
+    var offsetPerParticle = rowLength * 2;
+
+    geo.colors[ 0 ].setRGB( 1, 0, 0 );
+
+    for (var i=0; i<particleCount; i++) {
+      var offset = offsets[i];
+      for (var j=0; j<pointsPerParticle; j++) {
+        var start = i * offsetPerParticle + j * 4;
+        var mag = round(data[start+2] / 255.0, precision);
+        var magDec = data[start+rowLength+2] / 255.0 * precision;
+        mag = Math.max(minMag, mag + magDec);
+
+        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + globalOffset;
+        pOffset = 1.0 - pOffset % 1.0;
+
+        if (prevMag && j > 0) {
+          var colorIndex = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
+          geo.colors[colorIndex-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
+          geo.colors[colorIndex].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+        }
+
+        prevMag = mag;
+        prevOffset = pOffset;
+      }
+    }
+
+    geo.colorsNeedUpdate = true;
+    mat.vertexColors = THREE.VertexColors;
+    mat.needsUpdate = true;
   };
 
   return Globe;

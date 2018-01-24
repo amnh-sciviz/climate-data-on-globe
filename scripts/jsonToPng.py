@@ -61,6 +61,7 @@ else:
     sys.exit(1)
 
 # Create two blank image
+PRECISION = 0.01
 im = Image.new("RGB", (WIDTH, HEIGHT*2), (0, 0, 0))
 pixels = im.load()
 for row in range(HEIGHT):
@@ -75,13 +76,13 @@ for row in range(HEIGHT):
         g = norm(gData[index] * MULTIPLIER, gRange[0], gRange[1])
         b = norm(bData[index] * MULTIPLIER, bRange[0], bRange[1])
         # store the decimal
-        rd = r * 100 % 1.0
-        gd = g * 100 % 1.0
-        bd = b * 100 % 1.0
+        rd = r / PRECISION % 1.0
+        gd = g / PRECISION % 1.0
+        bd = b / PRECISION % 1.0
         # chop off decimal of rgb
-        r = int(r * 100) * 0.01
-        g = int(g * 100) * 0.01
-        b = int(b * 100) * 0.01
+        r = int(r / PRECISION) * PRECISION
+        g = int(g / PRECISION) * PRECISION
+        b = int(b / PRECISION) * PRECISION
         thisRow = row * 2
         pixels[col, thisRow] = (int(round(r * 255.0)), int(round(g * 255.0)), int(round(b * 255.0)))
         pixels[col, thisRow+1] = (int(round(rd * 255.0)), int(round(gd * 255.0)), int(round(bd * 255.0)))

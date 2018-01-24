@@ -1,3 +1,4 @@
 *.nc
 *.pyc
 node_modules/
+data/oscar_vel2016.json
