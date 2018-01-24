@@ -10,10 +10,28 @@ var Globe = (function() {
       radius: 0.5,
       minMag: 0.2,
       precision: 0.01,
-      animationMs: 2000
+      animationMs: 2000,
+      yearMs: 120000
     };
     this.opt = $.extend({}, defaults, options);
     this.init();
+  }
+
+  function getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval) {
+    var rowLength = pointsPerParticle * intervals * 4;
+    var offsetPerParticle = rowLength * 2;
+    var offsetPerInterval = pointsPerParticle;
+    var start = i * offsetPerParticle + interval * offsetPerInterval * 4 + j * 4;
+    var lon = round(data[start] / 255.0, precision);
+    var lat = round(data[start+1] / 255.0, precision);
+    var mag = round(data[start+2] / 255.0, precision);
+    var lonDec = data[start+rowLength] / 255.0 * precision;
+    var latDec = data[start+rowLength+1] / 255.0 * precision;
+    var magDec = data[start+rowLength+2] / 255.0 * precision;
+    lon = lerp(-270, 90, lon+lonDec);
+    lat = lerp(90, -90, lat+latDec);
+    mag = Math.max(minMag, mag + magDec);
+    return [lon, lat, mag];
   }
 
   function lerp(a, b, percent) {
@@ -39,6 +57,7 @@ var Globe = (function() {
     this.particleCount = this.opt.particleCount;
     this.pointsPerParticle = this.opt.pointsPerParticle;
     this.data = this.opt.data;
+    this.dataLen = this.data.length;
 
     var offsets = _.range(this.particleCount);
     this.offsets = _.map(offsets, function(v){ return Math.random(); });
@@ -63,23 +82,15 @@ var Globe = (function() {
     var prev = false;
     var prevMag = false;
     var prevOffset = false;
-    var rowLength = pointsPerParticle * intervals * 4;
-    var offsetPerParticle = rowLength * 2;
+    var interval = 0;
 
     for (var i=0; i<particleCount; i++) {
       var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        var start = i * offsetPerParticle + j * 4;
-        var lon = round(data[start] / 255.0, precision);
-        var lat = round(data[start+1] / 255.0, precision);
-        var mag = round(data[start+2] / 255.0, precision);
-        var lonDec = data[start+rowLength] / 255.0 * precision;
-        var latDec = data[start+rowLength+1] / 255.0 * precision;
-        var magDec = data[start+rowLength+2] / 255.0 * precision;
-
-        lon = lerp(-270, 90, lon+lonDec);
-        lat = lerp(90, -90, lat+latDec);
-        mag = Math.max(minMag, mag + magDec);
+        var coord = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval);
+        var lon = coord[0];
+        var lat = coord[1];
+        var mag = coord[2];
 
         var pOffset = 1.0 * j / (pointsPerParticle-1) + offset;
         pOffset = 1.0 - pOffset % 1.0;
@@ -197,19 +208,23 @@ var Globe = (function() {
 
   Globe.prototype.render = function(){
     var animationMs = this.opt.animationMs;
+    var yearMs = this.opt.yearMs;
     var now = new Date();
-    var progress = (now % animationMs) / animationMs
-    this.updateGlobeData(progress);
+
+    var yearProgress = (now % yearMs) / yearMs;
+    var animationProgress = (now % animationMs) / animationMs;
+
+    this.updateGlobeData(yearProgress, animationProgress);
 
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
   };
 
-  Globe.prototype.updateGlobeData = function(globalOffset){
+  Globe.prototype.updateGlobeData = function(yearProgress, animationProgress){
     var mat = this.lineMat;
     var geo = this.lineGeo;
     var data = this.data;
-    var currentInterval = 0;
+    var dataLen = this.dataLen;
 
     var intervals = this.intervals;
     var particleCount = this.particleCount;
@@ -217,37 +232,51 @@ var Globe = (function() {
     var offsets = this.offsets;
     var minMag = this.opt.minMag;
     var precision = this.opt.precision;
+    var radius = this.opt.radius * 1.001;
 
+    var prev = false;
     var prevMag = false;
     var prevOffset = false;
     var rowLength = pointsPerParticle * intervals * 4;
     var offsetPerParticle = rowLength * 2;
 
-    geo.colors[ 0 ].setRGB( 1, 0, 0 );
+    var interval1 = Math.floor(yearProgress * (intervals-1));
+    var interval2 = interval1 + 1;
+    if (interval2 >= intervals) interval2 = 0;
+    var intervalProgress = (yearProgress * (intervals-1)) % 1.0;
 
     for (var i=0; i<particleCount; i++) {
       var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        var start = i * offsetPerParticle + j * 4;
-        var mag = round(data[start+2] / 255.0, precision);
-        var magDec = data[start+rowLength+2] / 255.0 * precision;
-        mag = Math.max(minMag, mag + magDec);
+        var coord1 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval1);
+        var coord2 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval2);
+        var lon = lerp(coord1[0], coord2[0], intervalProgress);
+        var lat = lerp(coord1[1], coord2[1], intervalProgress);
+        var mag = lerp(coord1[2], coord2[2], intervalProgress);
 
-        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + globalOffset;
+        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + animationProgress;
         pOffset = 1.0 - pOffset % 1.0;
 
-        if (prevMag && j > 0) {
-          var colorIndex = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
-          geo.colors[colorIndex-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
-          geo.colors[colorIndex].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+        var point = toSphere(lon, lat, radius);
+
+        if (prev) {
+          var index = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
+          geo.vertices[index-1].set(prev[0], prev[1], prev[2]);
+          geo.vertices[index].set(point[0], point[1], point[2]);
+          if (j > 0) {
+            geo.colors[index-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
+            geo.colors[index].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+          }
         }
 
+        prev = point.slice(0);
         prevMag = mag;
         prevOffset = pOffset;
       }
     }
 
     geo.colorsNeedUpdate = true;
+    geo.verticesNeedUpdate = true;
     mat.vertexColors = THREE.VertexColors;
     mat.needsUpdate = true;
   };
