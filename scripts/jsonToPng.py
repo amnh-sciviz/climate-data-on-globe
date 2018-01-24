@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 # Doc: ftp://podaac-ftp.jpl.nasa.gov/allData/oscar/preview/L4/oscar_third_deg/docs/oscarthirdguide.pdf
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/oscar_vel2016.json", help="Input JSON data file")
 parser.add_argument('-rgb', dest="RGB", default="lon,lat,mag", help="Key to map to red, green, blue")
-parser.add_argument('-range', dest="RANGE", default="-180,180;-90,90;0,2", help="Ranges for RGB values")
+parser.add_argument('-range', dest="RANGE", default="-180,180;-90,90;0,1", help="Ranges for RGB values")
 parser.add_argument('-dim', dest="DIM", default="intervals,particleCount,pointsPerParticle", help="Keys for dimension counts")
 parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../data/oscar_vel2016_meta.json", help="Output meta JSON file")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/oscar_vel2016.png", help="Output PNG file")
@@ -60,8 +60,8 @@ else:
     print "You must have 2 or 3 dimensions of data"
     sys.exit(1)
 
-# Create a blank image
-im = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+# Create two blank image
+im = Image.new("RGB", (WIDTH, HEIGHT*2), (0, 0, 0))
 pixels = im.load()
 for row in range(HEIGHT):
     for col in range(WIDTH):
@@ -74,7 +74,17 @@ for row in range(HEIGHT):
         r = norm(rData[index] * MULTIPLIER, rRange[0], rRange[1])
         g = norm(gData[index] * MULTIPLIER, gRange[0], gRange[1])
         b = norm(bData[index] * MULTIPLIER, bRange[0], bRange[1])
-        pixels[col, row] = (int(round(r * 255.0)), int(round(g * 255.0)), int(round(b * 255.0)))
+        # store the decimal
+        rd = r * 100 % 1.0
+        gd = g * 100 % 1.0
+        bd = b * 100 % 1.0
+        # chop off decimal of rgb
+        r = int(r * 100) * 0.01
+        g = int(g * 100) * 0.01
+        b = int(b * 100) * 0.01
+        thisRow = row * 2
+        pixels[col, thisRow] = (int(round(r * 255.0)), int(round(g * 255.0)), int(round(b * 255.0)))
+        pixels[col, thisRow+1] = (int(round(rd * 255.0)), int(round(gd * 255.0)), int(round(bd * 255.0)))
 im.save(OUTPUT_FILE)
 print "Saved file %s" % OUTPUT_FILE
 

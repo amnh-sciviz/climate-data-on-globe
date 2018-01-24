@@ -7,7 +7,8 @@ var Globe = (function() {
       viewAngle: 45,
       near: 0.01,
       far: 1000,
-      radius: 0.5
+      radius: 0.5,
+      minAlpha: 0.2
     };
     this.opt = $.extend({}, defaults, options);
     this.init();
@@ -16,6 +17,10 @@ var Globe = (function() {
   function lerp(a, b, percent) {
     return (1.0*b - a) * percent + a;
   }
+
+  function round(value, nearest) {
+    return Math.round(value / nearest) * nearest;
+  };
 
   function toSphere(lon, lat, radius) {
     var phi = (90-lat) * (Math.PI/180);
@@ -42,25 +47,51 @@ var Globe = (function() {
     var particleCount = this.particleCount;
     var pointsPerParticle = this.pointsPerParticle;
     var radius = this.opt.radius * 1.001;
+    var minAlpha = this.opt.minAlpha;
 
     var geo = new THREE.Geometry();
 
     var prev = false;
-    for (var i=0; i<pointsPerParticle; i++) {
-      var start = i * 4;
-      var lon = lerp(-180, 180, data[start] / 255.0);
-      var lat = lerp(-90, 90, data[start+1] / 255.0);
-      var mag = data[start+2] / 255.0;
-      var point = toSphere(lon, lat, radius);
+    var prevMag = false;
+    var intervalOffset = 0;
+    var rowLength = pointsPerParticle * intervals * 4;
+    var offsetPerParticle = rowLength * 2;
+    var precision = 0.01;
 
-      if (prev) {
-        geo.vertices.push(new THREE.Vector3(prev[0], prev[1], prev[2]));
-        geo.vertices.push(new THREE.Vector3(point[0], point[1], point[2]));
-        geo.colors.push(new THREE.Color(mag, mag, mag));
-        geo.colors.push(new THREE.Color(mag, mag, mag));
+    for (var i=0; i<particleCount; i++) {
+      for (var j=0; j<pointsPerParticle; j++) {
+        var start = i * offsetPerParticle + j * 4;
+        var lon = round(data[start] / 255.0, precision);
+        var lat = round(data[start+1] / 255.0, precision);
+        var mag = round(data[start+2] / 255.0, precision);
+        var lonDec = data[start+rowLength] / 255.0 * precision;
+        var latDec = data[start+rowLength+1] / 255.0 * precision;
+        var magDec = data[start+rowLength+2] / 255.0 * precision;
+
+        lon = lerp(-270, 90, lon+lonDec);
+        lat = lerp(90, -90, lat+latDec);
+        mag = Math.max(minAlpha, mag + magDec);
+
+        var point = toSphere(lon, lat, radius);
+
+        if (prev) {
+          geo.vertices.push(new THREE.Vector3(prev[0], prev[1], prev[2]));
+          geo.vertices.push(new THREE.Vector3(point[0], point[1], point[2]));
+          // first point of new segment, add an "invisible" line
+          if (j <= 0) {
+            geo.colors.push(new THREE.Color(0, 0, 0));
+            geo.colors.push(new THREE.Color(0, 0, 0));
+          } else {
+            // mag = 0.5;
+            // prevMag = 0.5;
+            geo.colors.push(new THREE.Color(prevMag, prevMag, prevMag));
+            geo.colors.push(new THREE.Color(mag, mag, mag));
+          }
+        }
+
+        prev = point.slice(0);
+        prevMag = mag;
       }
-
-      prev = point;
     }
 
     var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
