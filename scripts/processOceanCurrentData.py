@@ -16,9 +16,9 @@ parser.add_argument('-in', dest="INPUT_FILE", default="../data/downloaded/oscar_
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/oscar_vel2016.json", help="Output json file")
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=120, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=60, help="Particles per col")
-parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=50, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=1.0, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=1200, help="Number of particles to display")
+parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.5, help="Velocity mulitplier")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2400, help="Number of particles to display")
 
 args = parser.parse_args()
 
@@ -81,7 +81,7 @@ for month in range(12):
         for row in range(PARTICLES_PER_ROW):
             yp = 1.0 * col / (PARTICLES_PER_COL-1)
             xp = 1.0 * row / (PARTICLES_PER_ROW-1)
-            lng = getLon(xp, LNG_RANGE)
+            lng = getLon(xp, (0, 360))
             lat = getLat(yp, LAT_RANGE)
             lng = round(lng, PRECISION)
             lat = round(lat, PRECISION)
@@ -151,7 +151,7 @@ for month in range(12):
     # draw = ImageDraw.Draw(im)
     # for particle in addParticles:
     #     coordinates = particle["points"]
-    #     curve = [(norm(c[0], -180, 180) * WIDTH, norm(c[1], -90, 90) * HEIGHT) for c in coordinates]
+    #     curve = [(norm(c[0], -180, 180, clamp=False) * WIDTH, norm(c[1], -90, 90, clamp=False) * HEIGHT) for c in coordinates]
     #     draw.line(curve, fill=255)
     # del draw
     # im.save("monthDraw.png", "PNG")
