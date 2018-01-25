@@ -279,10 +279,10 @@ var Globe = (function() {
     var prev = false;
     var prevOffset = false;
 
-    var interval1 = Math.floor(yearProgress * (intervals-1));
+    var interval1 = Math.floor(yearProgress * intervals);
     var interval2 = interval1 + 1;
     if (interval2 >= intervals) interval2 = 0;
-    var intervalProgress = (yearProgress * (intervals-1)) % 1.0;
+    var intervalProgress = (yearProgress * intervals) % 1.0;
 
     var positions = geo.attributes.position.array;
     var colors = geo.attributes.color.array;
