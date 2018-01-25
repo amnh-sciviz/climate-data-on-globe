@@ -61,7 +61,7 @@ var App = (function() {
 
     $('.loading').remove();
 
-    this.globe = new Globe(_.extend({}, metadata, {"geojson": geojson, "data": data}));
+    this.globe = new Globe(_.extend({}, metadata, this.opt.global, this.opt.globe , {"geojson": geojson, "data": data}));
 
     this.loadListeners();
 

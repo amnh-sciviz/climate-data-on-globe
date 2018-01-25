@@ -17,21 +17,13 @@ var Globe = (function() {
     this.init();
   }
 
-  function getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval) {
-    var rowLength = pointsPerParticle * intervals * 4;
-    var offsetPerParticle = rowLength * 2;
-    var offsetPerInterval = pointsPerParticle;
-    var start = i * offsetPerParticle + interval * offsetPerInterval * 4 + j * 4;
-    var lon = round(data[start] / 255.0, precision);
-    var lat = round(data[start+1] / 255.0, precision);
-    var mag = round(data[start+2] / 255.0, precision);
-    var lonDec = data[start+rowLength] / 255.0 * precision;
-    var latDec = data[start+rowLength+1] / 255.0 * precision;
-    var magDec = data[start+rowLength+2] / 255.0 * precision;
-    lon = lerp(-270, 90, lon+lonDec);
-    lat = lerp(90, -90, lat+latDec);
-    mag = Math.max(minMag, mag + magDec);
-    return [lon, lat, mag];
+  function getPoint(data, interval, particle, point, particleCount, pointsPerParticle) {
+    var index = interval * particleCount * pointsPerParticle * 4 + particle * pointsPerParticle * 4 + point * 4;
+    var x = data[index];
+    var y = data[++index];
+    var z = data[++index];
+    var mag = data[++index];
+    return [x, y, z, mag];
   }
 
   function lerp(a, b, percent) {
@@ -40,7 +32,7 @@ var Globe = (function() {
 
   function round(value, nearest) {
     return Math.round(value / nearest) * nearest;
-  };
+  }
 
   function toSphere(lon, lat, radius) {
     var phi = (90-lat) * (Math.PI/180);
@@ -56,11 +48,11 @@ var Globe = (function() {
     this.intervals = this.opt.intervals;
     this.particleCount = this.opt.particleCount;
     this.pointsPerParticle = this.opt.pointsPerParticle;
-    this.data = this.opt.data;
-    this.dataLen = this.data.length;
 
     var offsets = _.range(this.particleCount);
     this.offsets = _.map(offsets, function(v){ return Math.random(); });
+
+    this.preprocessData(this.opt.data);
 
     this.loadEarth();
     this.loadGeojson(this.opt.geojson);
@@ -69,33 +61,21 @@ var Globe = (function() {
 
   Globe.prototype.loadData = function() {
     var data = this.data;
-    var intervals = this.intervals;
     var particleCount = this.particleCount;
     var pointsPerParticle = this.pointsPerParticle;
     var offsets = this.offsets;
-    var radius = this.opt.radius * 1.001;
-    var minMag = this.opt.minMag;
-    var precision = this.opt.precision;
 
-    var geo = new THREE.Geometry();
+    var geo = new THREE.BufferGeometry();
 
     var prev = false;
-    var prevMag = false;
     var prevOffset = false;
-    var interval = 0;
 
     for (var i=0; i<particleCount; i++) {
       var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        var coord = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval);
-        var lon = coord[0];
-        var lat = coord[1];
-        var mag = coord[2];
-
+        var point = getPoint(data, 0, i, j, particleCount, pointsPerParticle);
         var pOffset = 1.0 * j / (pointsPerParticle-1) + offset;
         pOffset = 1.0 - pOffset % 1.0;
-
-        var point = toSphere(lon, lat, radius);
 
         if (prev) {
           geo.vertices.push(new THREE.Vector3(prev[0], prev[1], prev[2]));
@@ -107,13 +87,14 @@ var Globe = (function() {
           } else {
             // mag = 0.5;
             // prevMag = 0.5;
+            var mag = point[3];
+            var prevMag = prev[3];
             geo.colors.push(new THREE.Color(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset));
             geo.colors.push(new THREE.Color(mag*pOffset, mag*pOffset, mag*pOffset));
           }
         }
 
-        prev = point.slice(0);
-        prevMag = mag;
+        prev = point;
         prevOffset = pOffset;
       }
     }
@@ -206,6 +187,54 @@ var Globe = (function() {
     this.camera.updateProjectionMatrix();
   };
 
+  // Turn image data into [x, y, z, mag] values
+  Globe.prototype.preprocessData = function(imgData){
+    var intervals = this.intervals;
+    var particleCount = this.particleCount;
+    var pointsPerParticle = this.pointsPerParticle;
+    var minMag = this.opt.minMag;
+    var precision = this.opt.precision;
+    var radius = this.opt.radius * 1.001;
+
+    var imgDataLen = imgData.length;
+    var targetDataLen = intervals * particleCount * pointsPerParticle * 4;
+
+    console.log('Target data length:' + targetDataLen);
+    var data = [];
+    data.length = targetDataLen;
+
+    var offsetPerPoint = 4;
+    var rowLength = pointsPerParticle * intervals * offsetPerPoint;
+    var offsetPerParticle = rowLength * 2;
+    var offsetPerInterval = pointsPerParticle;
+
+    for (var i=0; i<intervals; i++) {
+      for (var j=0; j<particleCount; j++) {
+        for (var k=0; k<pointsPerParticle; k++) {
+          var start = i * offsetPerInterval * offsetPerPoint + j * offsetPerParticle + k * offsetPerPoint;
+          var lon = round(imgData[start] / 255.0, precision);
+          var lat = round(imgData[start+1] / 255.0, precision);
+          var mag = round(imgData[start+2] / 255.0, precision);
+          var lonDec = imgData[start+rowLength] / 255.0 * precision;
+          var latDec = imgData[start+rowLength+1] / 255.0 * precision;
+          var magDec = imgData[start+rowLength+2] / 255.0 * precision;
+          lon = lerp(-270, 90, lon+lonDec);
+          lat = lerp(90, -90, lat+latDec);
+          mag = Math.max(minMag, mag + magDec);
+          var point = toSphere(lon, lat, radius);
+          var index = i * particleCount * pointsPerParticle * 4 + j * pointsPerParticle * 4 + k * 4;
+          data[index] = point[0]; // x
+          data[++index] = point[1]; // y
+          data[++index] = point[2]; // z
+          data[++index] = mag;
+        }
+      }
+    }
+
+    this.data = data;
+    console.log(this.data.length)
+  };
+
   Globe.prototype.render = function(){
     var animationMs = this.opt.animationMs;
     var yearMs = this.opt.yearMs;
@@ -224,21 +253,14 @@ var Globe = (function() {
     var mat = this.lineMat;
     var geo = this.lineGeo;
     var data = this.data;
-    var dataLen = this.dataLen;
 
     var intervals = this.intervals;
     var particleCount = this.particleCount;
     var pointsPerParticle = this.pointsPerParticle;
     var offsets = this.offsets;
-    var minMag = this.opt.minMag;
-    var precision = this.opt.precision;
-    var radius = this.opt.radius * 1.001;
 
     var prev = false;
-    var prevMag = false;
     var prevOffset = false;
-    var rowLength = pointsPerParticle * intervals * 4;
-    var offsetPerParticle = rowLength * 2;
 
     var interval1 = Math.floor(yearProgress * (intervals-1));
     var interval2 = interval1 + 1;
@@ -248,35 +270,37 @@ var Globe = (function() {
     for (var i=0; i<particleCount; i++) {
       var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        var coord1 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval1);
-        var coord2 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval2);
-        var lon = lerp(coord1[0], coord2[0], intervalProgress);
-        var lat = lerp(coord1[1], coord2[1], intervalProgress);
-        var mag = lerp(coord1[2], coord2[2], intervalProgress);
+        // var coord1 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval1);
+        // var coord2 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval2);
+        // var lon = lerp(coord1[0], coord2[0], intervalProgress);
+        // var lat = lerp(coord1[1], coord2[1], intervalProgress);
+        // var mag = lerp(coord1[2], coord2[2], intervalProgress);
+
+        var interval = 0;
+        var point = getPoint(data, interval, i, j, particleCount, pointsPerParticle);
 
         var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + animationProgress;
         pOffset = 1.0 - pOffset % 1.0;
 
-        var point = toSphere(lon, lat, radius);
-
         if (prev) {
-          var index = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
-          geo.vertices[index-1].set(prev[0], prev[1], prev[2]);
-          geo.vertices[index].set(point[0], point[1], point[2]);
+          var geoIndex = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
+          // geo.vertices[geoIndex-1].set(prev[0], prev[1], prev[2]);
+          // geo.vertices[geoIndex].set(point[0], point[1], point[2]);
           if (j > 0) {
-            geo.colors[index-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
-            geo.colors[index].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+            var mag = point[3];
+            var prevMag = prev[3];
+            geo.colors[geoIndex-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
+            geo.colors[geoIndex].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
           }
         }
 
-        prev = point.slice(0);
-        prevMag = mag;
+        prev = point;
         prevOffset = pOffset;
       }
     }
 
     geo.colorsNeedUpdate = true;
-    geo.verticesNeedUpdate = true;
+    // geo.verticesNeedUpdate = true;
     mat.vertexColors = THREE.VertexColors;
     mat.needsUpdate = true;
   };
