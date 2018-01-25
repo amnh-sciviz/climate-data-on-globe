@@ -16,11 +16,6 @@ def getLat(mu, r):
 
 def getLon(mu, r):
     lon = lerp(r[0], r[1], mu)
-    if lon >= 360:
-        lon = lon - 360
-    elif lon < 0:
-        lon = 360 + lon
-    lon = lon - 180
     return lon
 
 def lerp(a, b, mu):

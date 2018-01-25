@@ -72,7 +72,7 @@ for row in range(HEIGHT):
             j = row
             k = int(col % z)
             index = i * y * z + j * z + k
-        r = norm(rData[index] * MULTIPLIER, rRange[0], rRange[1])
+        r = norm(rData[index] * MULTIPLIER, rRange[0], rRange[1], clamp=False, wrap=True) # longitude should wrap around
         g = norm(gData[index] * MULTIPLIER, gRange[0], gRange[1])
         b = norm(bData[index] * MULTIPLIER, bRange[0], bRange[1])
         # store the decimal

@@ -16,9 +16,9 @@ parser.add_argument('-in', dest="INPUT_FILE", default="../data/downloaded/oscar_
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/oscar_vel2016.json", help="Output json file")
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=120, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=60, help="Particles per col")
-parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.5, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2400, help="Number of particles to display")
+parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=80, help="Points per particle")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.8, help="Velocity mulitplier")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=1800, help="Number of particles to display")
 
 args = parser.parse_args()
 
@@ -33,6 +33,8 @@ DISPLAY_PARTICLES = args.DISPLAY_PARTICLES
 PARTICLES = PARTICLES_PER_COL * PARTICLES_PER_ROW
 LAT_RANGE = (-80, 80) # latitude is represented from -80° to 80° with a 1/3° resolution
 LNG_RANGE = (20, 420) # longitude is represented from  as 20° to 420°
+LAT_RANGE_SAMPLE = LAT_RANGE
+LNG_RANGE_SAMPLE = (40, 400)
 PRECISION = 3
 
 if PARTICLES < DISPLAY_PARTICLES:
@@ -81,8 +83,8 @@ for month in range(12):
         for row in range(PARTICLES_PER_ROW):
             yp = 1.0 * col / (PARTICLES_PER_COL-1)
             xp = 1.0 * row / (PARTICLES_PER_ROW-1)
-            lng = getLon(xp, (0, 360))
-            lat = getLat(yp, LAT_RANGE)
+            lng = getLon(xp, LNG_RANGE_SAMPLE)
+            lat = getLat(yp, LAT_RANGE_SAMPLE)
             lng = round(lng, PRECISION)
             lat = round(lat, PRECISION)
             coordinates = []
