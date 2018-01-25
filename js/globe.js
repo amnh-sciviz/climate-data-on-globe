@@ -30,6 +30,15 @@ var Globe = (function() {
     return (1.0*b - a) * percent + a;
   }
 
+  function lerpPoint(p1, p2, percent) {
+    return [
+      lerp(p1[0], p2[0], percent),
+      lerp(p1[1], p2[1], percent),
+      lerp(p1[2], p2[2], percent),
+      lerp(p1[3], p2[3], percent)
+    ]
+  }
+
   function round(value, nearest) {
     return Math.round(value / nearest) * nearest;
   }
@@ -65,7 +74,9 @@ var Globe = (function() {
     var pointsPerParticle = this.pointsPerParticle;
     var offsets = this.offsets;
 
-    var geo = new THREE.BufferGeometry();
+    var positions = [];
+    var colors = [];
+    var color = new THREE.Color();
 
     var prev = false;
     var prevOffset = false;
@@ -78,19 +89,22 @@ var Globe = (function() {
         pOffset = 1.0 - pOffset % 1.0;
 
         if (prev) {
-          geo.vertices.push(new THREE.Vector3(prev[0], prev[1], prev[2]));
-          geo.vertices.push(new THREE.Vector3(point[0], point[1], point[2]));
+          positions.push(prev[0], prev[1], prev[2]);
+          positions.push(point[0], point[1], point[2]);
           // first point of new segment, add an "invisible" line
           if (j <= 0) {
-            geo.colors.push(new THREE.Color(0, 0, 0));
-            geo.colors.push(new THREE.Color(0, 0, 0));
+            color.setRGB(0, 0, 0);
+            colors.push(color.r, color.g, color.b);
+            colors.push(color.r, color.g, color.b);
           } else {
             // mag = 0.5;
             // prevMag = 0.5;
             var mag = point[3];
             var prevMag = prev[3];
-            geo.colors.push(new THREE.Color(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset));
-            geo.colors.push(new THREE.Color(mag*pOffset, mag*pOffset, mag*pOffset));
+            color.setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
+            colors.push(color.r, color.g, color.b);
+            color.setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+            colors.push(color.r, color.g, color.b);
           }
         }
 
@@ -98,6 +112,14 @@ var Globe = (function() {
         prevOffset = pOffset;
       }
     }
+
+    var geo = new THREE.BufferGeometry();
+    geo.addAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    // geo.computeBoundingSphere();
+
+    geo.attributes.position.dynamic = true;
+    geo.attributes.color.dynamic = true;
 
     var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
     var line = new THREE.LineSegments(geo, mat);
@@ -199,7 +221,7 @@ var Globe = (function() {
     var imgDataLen = imgData.length;
     var targetDataLen = intervals * particleCount * pointsPerParticle * 4;
 
-    console.log('Target data length:' + targetDataLen);
+    // console.log('Target data length:' + targetDataLen);
     var data = [];
     data.length = targetDataLen;
 
@@ -232,7 +254,6 @@ var Globe = (function() {
     }
 
     this.data = data;
-    console.log(this.data.length)
   };
 
   Globe.prototype.render = function(){
@@ -267,30 +288,36 @@ var Globe = (function() {
     if (interval2 >= intervals) interval2 = 0;
     var intervalProgress = (yearProgress * (intervals-1)) % 1.0;
 
+    var positions = geo.attributes.position.array;
+    var colors = geo.attributes.color.array;
+
     for (var i=0; i<particleCount; i++) {
       var offset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        // var coord1 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval1);
-        // var coord2 = getCoordinateFromImageData(data, i, j, pointsPerParticle, intervals, precision, minMag, interval2);
-        // var lon = lerp(coord1[0], coord2[0], intervalProgress);
-        // var lat = lerp(coord1[1], coord2[1], intervalProgress);
-        // var mag = lerp(coord1[2], coord2[2], intervalProgress);
-
-        var interval = 0;
-        var point = getPoint(data, interval, i, j, particleCount, pointsPerParticle);
+        var point1 = getPoint(data, interval1, i, j, particleCount, pointsPerParticle);
+        var point2 = getPoint(data, interval2, i, j, particleCount, pointsPerParticle);
+        var point = lerpPoint(point1, point2, intervalProgress);
 
         var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + animationProgress;
         pOffset = 1.0 - pOffset % 1.0;
 
         if (prev) {
-          var geoIndex = i * (pointsPerParticle-1) * 2 + (j * 2 - 1);
-          // geo.vertices[geoIndex-1].set(prev[0], prev[1], prev[2]);
-          // geo.vertices[geoIndex].set(point[0], point[1], point[2]);
+          var geoIndex = (i * (pointsPerParticle-1) * 2 + (j * 2 - 1)) * 3;
+          positions[geoIndex-3] = prev[0];
+          positions[geoIndex-2] = prev[1];
+          positions[geoIndex-1] = prev[2];
+          positions[geoIndex] = point[0];
+          positions[geoIndex+1] = point[1];
+          positions[geoIndex+2] = point[2];
           if (j > 0) {
-            var mag = point[3];
-            var prevMag = prev[3];
-            geo.colors[geoIndex-1].setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
-            geo.colors[geoIndex].setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
+            var c0 = prev[3] * pOffset;
+            var c1 = point[3] * pOffset;
+            colors[geoIndex-3] = c0;
+            colors[geoIndex-2] = c0;
+            colors[geoIndex-1] = c0;
+            colors[geoIndex] = c1;
+            colors[geoIndex+1] = c1;
+            colors[geoIndex+2] = c1;
           }
         }
 
@@ -299,10 +326,12 @@ var Globe = (function() {
       }
     }
 
-    geo.colorsNeedUpdate = true;
-    // geo.verticesNeedUpdate = true;
-    mat.vertexColors = THREE.VertexColors;
-    mat.needsUpdate = true;
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
+    // geo.computeBoundingSphere();
+
+    // mat.vertexColors = THREE.VertexColors;
+    // mat.needsUpdate = true;
   };
 
   return Globe;
