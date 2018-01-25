@@ -2,9 +2,9 @@ var CONFIG = {
   "geojson": "data/downloaded/countries_states.geojson",
   "data": "data/oscar_vel2016.png",
   "meta": "data/oscar_vel2016_meta.json",
-  "global": {
-    "yearMs": 120000,
-    "animationMs": 2000
+  "yearMs": 120000,
+  "calendar": {
+    "marker": "#marker"
   },
   "globe": {
     "el": '#globe',
@@ -12,7 +12,8 @@ var CONFIG = {
     "near": 0.01,
     "far": 1000,
     "radius": 0.5,
-    "minMag": 0.2,
-    "precision": 0.01
+    "minMag": 0.33,
+    "precision": 0.01,
+    "animationMs": 3000
   }
 };

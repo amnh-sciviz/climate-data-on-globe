@@ -118,8 +118,8 @@ var Globe = (function() {
     geo.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     // geo.computeBoundingSphere();
 
-    geo.attributes.position.dynamic = true;
-    geo.attributes.color.dynamic = true;
+    // geo.attributes.position.dynamic = true;
+    // geo.attributes.color.dynamic = true;
 
     var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
     var line = new THREE.LineSegments(geo, mat);
@@ -256,16 +256,12 @@ var Globe = (function() {
     this.data = data;
   };
 
-  Globe.prototype.render = function(){
+  Globe.prototype.render = function(yearProgress){
     var animationMs = this.opt.animationMs;
-    var yearMs = this.opt.yearMs;
     var now = new Date();
-
-    var yearProgress = (now % yearMs) / yearMs;
     var animationProgress = (now % animationMs) / animationMs;
 
     this.updateGlobeData(yearProgress, animationProgress);
-
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
   };

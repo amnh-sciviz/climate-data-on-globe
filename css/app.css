@@ -1,30 +1,52 @@
 .app {
+  font-family: sans-serif;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: #111;
-}
-
-.globe {
-  width: 100vw;
-  height: 56.25vw;  /* 1920 x 1080 ratio */
-  position: absolute;
-  top: 50%;
-  left: 0;
-  margin-top: -28.125vw;
   background: #000;
+  color: #fff;
+  overflow: hidden;
 }
 
-/* Minimum aspect ratio (for very wide screens) */
-@media (min-aspect-ratio: 1920/1080) {
-  .globe {
-    width: 177.777777778vh;
-    height: 100vh;
-    top: 0;
-    left: 50%;
-    margin-top: 0;
-    margin-left: -88.888888889vh;
-  }
+.globe,
+.calendar {
+  width: 100%;
+  position: absolute;
+  left: 0;
+}
+.globe {
+  height: 75vh;
+  bottom: 5vh;
+}
+.calendar {
+  width: 80%;
+  left: 10%;
+  height: 10vh;
+  top: 5vh;
+}
+.calendar:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+.mo {
+  width: 8.33333333%;
+  box-sizing: border-box;
+  text-align: center;
+  float: left;
+  font-weight: bold;
+  font-size: 2rem;
+  height: 10vh;
+  line-height: 10vh;
+}
+.marker {
+  position: absolute;
+  width: 5%;
+  height: 10px;
+  background: white;
+  left: 0;
+  bottom: 0;
+  margin-left: 1.8%;
 }

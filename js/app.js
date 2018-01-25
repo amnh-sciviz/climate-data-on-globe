@@ -61,7 +61,8 @@ var App = (function() {
 
     $('.loading').remove();
 
-    this.globe = new Globe(_.extend({}, metadata, this.opt.global, this.opt.globe , {"geojson": geojson, "data": data}));
+    this.globe = new Globe(_.extend({}, metadata, this.opt.globe , {"geojson": geojson, "data": data}));
+    this.calendar = new Calendar(_.extend({}, this.opt.calendar));
 
     this.loadListeners();
 
@@ -71,7 +72,12 @@ var App = (function() {
   App.prototype.render = function(){
     var _this = this;
 
-    this.globe.render();
+    var now = new Date();
+    var yearMs = this.opt.yearMs;
+    var yearProgress = (now % yearMs) / yearMs;
+
+    this.globe.render(yearProgress);
+    this.calendar.render(yearProgress);
 
     requestAnimationFrame(function(){ _this.render(); });
   };
