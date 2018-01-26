@@ -8,6 +8,79 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+
+  <script type="x-shader/x-vertex" id="vertexShader">
+  uniform float yearProgress;
+  uniform float animationProgress;
+
+  // offset for animation
+  attribute float pointOffset;
+  attribute float particleOffset;
+
+  // a bit of a hack: store position of entire year
+  attribute vec4 jan;
+  attribute vec4 feb;
+  attribute vec4 mar;
+  attribute vec4 apr;
+  attribute vec4 may;
+  attribute vec4 jun;
+  attribute vec4 jul;
+  attribute vec4 aug;
+  attribute vec4 sep;
+  attribute vec4 oct;
+  attribute vec4 nov;
+  attribute vec4 dec;
+
+  // passed to the fragment shader
+  varying vec4 vColor;
+
+  void main() {
+
+    // interpolate between months
+    vec4 fromPosition;
+    vec4 toPosition;
+    if (yearProgress > 11.0/12.0) { fromPosition = dec; toPosition = jan; }
+    else if (yearProgress > 10.0/12.0) { fromPosition = nov; toPosition = dec; }
+    else if (yearProgress > 9.0/12.0) { fromPosition = oct; toPosition = nov; }
+    else if (yearProgress > 8.0/12.0) { fromPosition = sep; toPosition = oct; }
+    else if (yearProgress > 7.0/12.0) { fromPosition = aug; toPosition = sep; }
+    else if (yearProgress > 6.0/12.0) { fromPosition = jul; toPosition = aug; }
+    else if (yearProgress > 5.0/12.0) { fromPosition = jun; toPosition = jul; }
+    else if (yearProgress > 4.0/12.0) { fromPosition = may; toPosition = jun; }
+    else if (yearProgress > 3.0/12.0) { fromPosition = apr; toPosition = may; }
+    else if (yearProgress > 2.0/12.0) { fromPosition = mar; toPosition = apr; }
+    else if (yearProgress > 1.0/12.0) { fromPosition = feb; toPosition = mar; }
+    else { fromPosition = jan; toPosition = feb; }
+
+    float month = yearProgress * 12.0;
+    float mu = month - floor(month);
+    vec4 myPosition = vec4(
+      mix(fromPosition.x, toPosition.x, mu),
+      mix(fromPosition.y, toPosition.y, mu),
+      mix(fromPosition.z, toPosition.z, mu),
+      mix(fromPosition.w, toPosition.w, mu)
+    );
+
+    float magnitude = myPosition.w;
+
+    // animate opacity of color
+    float colorOffset = 1.0 - (pointOffset + particleOffset + animationProgress);
+    colorOffset = colorOffset - floor(colorOffset);
+    vColor = vec4(color, colorOffset * magnitude);   // pass the color to the fragment shader
+
+    // set new position
+    vec4 mvPosition = modelViewMatrix * vec4(vec3(myPosition.x, myPosition.y, myPosition.z), 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentShader">
+  varying vec4 vColor;
+  void main() {
+    gl_FragColor = vColor;
+  }
+  </script>
+
   <div id="app" class="app">
     <div id="calendar" class="calendar">
       <div class="mo">Jan</div>

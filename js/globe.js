@@ -75,53 +75,80 @@ var Globe = (function() {
     var offsets = this.offsets;
 
     var positions = [];
-    var colors = [];
-    var color = new THREE.Color();
+    var particleOffsets = [];
+    var pointOffsets = [];
 
-    var prev = false;
+    // initialize empty months
+    for (var m=0; m<12; m++) {
+      positions.push([]);
+    }
+
+    var prevPoints = false;
     var prevOffset = false;
 
     for (var i=0; i<particleCount; i++) {
-      var offset = offsets[i];
+      var particleOffset = offsets[i];
       for (var j=0; j<pointsPerParticle; j++) {
-        var point = getPoint(data, 0, i, j, particleCount, pointsPerParticle);
-        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset;
-        pOffset = 1.0 - pOffset % 1.0;
 
-        if (prev) {
-          positions.push(prev[0], prev[1], prev[2]);
-          positions.push(point[0], point[1], point[2]);
-          // first point of new segment, add an "invisible" line
-          if (j <= 0) {
-            color.setRGB(0, 0, 0);
-            colors.push(color.r, color.g, color.b);
-            colors.push(color.r, color.g, color.b);
-          } else {
-            // mag = 0.5;
-            // prevMag = 0.5;
-            var mag = point[3];
-            var prevMag = prev[3];
-            color.setRGB(prevMag*prevOffset, prevMag*prevOffset, prevMag*prevOffset);
-            colors.push(color.r, color.g, color.b);
-            color.setRGB(mag*pOffset, mag*pOffset, mag*pOffset);
-            colors.push(color.r, color.g, color.b);
-          }
+        var points = [];
+        for (var m=0; m<12; m++) {
+          points.push(getPoint(data, m, i, j, particleCount, pointsPerParticle));
         }
 
-        prev = point;
-        prevOffset = pOffset;
+        var pointOffset = 1.0 * j / (pointsPerParticle-1);
+        if (prevPoints) {
+          particleOffsets.push(particleOffset, particleOffset);
+          pointOffsets.push(prevOffset, pointOffset);
+
+          for (var m=0; m<12; m++) {
+            var point = points[m];
+            var prev = prevPoints[m];
+
+            // first point of new segment, add an "invisible" line
+            var mag = 0;
+            var prevMag = 0;
+            if (j > 0) {
+              var mag = point[3];
+              var prevMag = prev[3];
+            }
+
+            positions[m].push(
+              prev[0], prev[1], prev[2], prevMag,
+              point[0], point[1], point[2], mag
+            );
+          }
+        }
+        prevPoints = points;
+        prevOffset = pointOffset;
       }
     }
 
+    // Create geometry using buffer geometry for performance boost
     var geo = new THREE.BufferGeometry();
-    geo.addAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    // geo.computeBoundingSphere();
+    var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    geo.addAttribute('position', new THREE.Float32BufferAttribute(positions[0], 4));
+    for (var m=0; m<12; m++) {
+      var name = months[m];
+      geo.addAttribute(name, new THREE.Float32BufferAttribute(positions[m], 4));
+    }
+    geo.addAttribute('particleOffset', new THREE.Float32BufferAttribute(particleOffsets, 1));
+    geo.addAttribute('pointOffset', new THREE.Float32BufferAttribute(pointOffsets, 1));
 
-    // geo.attributes.position.dynamic = true;
-    // geo.attributes.color.dynamic = true;
+    var uniforms = {
+      animationProgress: { type: "f", value: 0.0 },
+      yearProgress: { type: "f", value: 0.0 },
+      color: { type: "c", value: new THREE.Color( 0xffffff ) }
+    };
+    var mat = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: document.getElementById('vertexShader').textContent,
+      fragmentShader: document.getElementById('fragmentShader').textContent,
+      blending: THREE.AdditiveBlending,
+      // depthTest: false,
+      transparent: true,
+      vertexColors: THREE.VertexColors
+    });
 
-    var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
     var line = new THREE.LineSegments(geo, mat);
 
     this.lineGeo = geo;
@@ -267,67 +294,9 @@ var Globe = (function() {
   };
 
   Globe.prototype.updateGlobeData = function(yearProgress, animationProgress){
-    var mat = this.lineMat;
-    var geo = this.lineGeo;
-    var data = this.data;
-
-    var intervals = this.intervals;
-    var particleCount = this.particleCount;
-    var pointsPerParticle = this.pointsPerParticle;
-    var offsets = this.offsets;
-
-    var prev = false;
-    var prevOffset = false;
-
-    var interval1 = Math.floor(yearProgress * intervals);
-    var interval2 = interval1 + 1;
-    if (interval2 >= intervals) interval2 = 0;
-    var intervalProgress = (yearProgress * intervals) % 1.0;
-
-    var positions = geo.attributes.position.array;
-    var colors = geo.attributes.color.array;
-
-    for (var i=0; i<particleCount; i++) {
-      var offset = offsets[i];
-      for (var j=0; j<pointsPerParticle; j++) {
-        var point1 = getPoint(data, interval1, i, j, particleCount, pointsPerParticle);
-        var point2 = getPoint(data, interval2, i, j, particleCount, pointsPerParticle);
-        var point = lerpPoint(point1, point2, intervalProgress);
-
-        var pOffset = 1.0 * j / (pointsPerParticle-1) + offset + animationProgress;
-        pOffset = 1.0 - pOffset % 1.0;
-
-        if (prev) {
-          var geoIndex = (i * (pointsPerParticle-1) * 2 + (j * 2 - 1)) * 3;
-          positions[geoIndex-3] = prev[0];
-          positions[geoIndex-2] = prev[1];
-          positions[geoIndex-1] = prev[2];
-          positions[geoIndex] = point[0];
-          positions[geoIndex+1] = point[1];
-          positions[geoIndex+2] = point[2];
-          if (j > 0) {
-            var c0 = prev[3] * pOffset;
-            var c1 = point[3] * pOffset;
-            colors[geoIndex-3] = c0;
-            colors[geoIndex-2] = c0;
-            colors[geoIndex-1] = c0;
-            colors[geoIndex] = c1;
-            colors[geoIndex+1] = c1;
-            colors[geoIndex+2] = c1;
-          }
-        }
-
-        prev = point;
-        prevOffset = pOffset;
-      }
-    }
-
-    geo.attributes.position.needsUpdate = true;
-    geo.attributes.color.needsUpdate = true;
-    // geo.computeBoundingSphere();
-
-    // mat.vertexColors = THREE.VertexColors;
-    // mat.needsUpdate = true;
+    var uniforms = this.lineMat.uniforms;
+    uniforms.yearProgress.value = yearProgress;
+    uniforms.animationProgress.value = animationProgress;
   };
 
   return Globe;
