@@ -54,19 +54,14 @@
 
     float month = yearProgress * 12.0;
     float mu = month - floor(month);
-    vec4 myPosition = vec4(
-      mix(fromPosition.x, toPosition.x, mu),
-      mix(fromPosition.y, toPosition.y, mu),
-      mix(fromPosition.z, toPosition.z, mu),
-      mix(fromPosition.w, toPosition.w, mu)
-    );
+    vec4 myPosition = mix(fromPosition, toPosition, mu);
 
     float magnitude = myPosition.w;
 
     // animate opacity of color
-    float colorOffset = 1.0 - (pointOffset + particleOffset + animationProgress);
+    float colorOffset = ((1.0 - pointOffset) + particleOffset + animationProgress);
     colorOffset = colorOffset - floor(colorOffset);
-    vColor = vec4(color, colorOffset * magnitude);   // pass the color to the fragment shader
+    vColor = vec4(color, (1.0 - colorOffset) * magnitude);   // pass the color to the fragment shader
 
     // set new position
     vec4 mvPosition = modelViewMatrix * vec4(vec3(myPosition.x, myPosition.y, myPosition.z), 1.0);
@@ -85,7 +80,7 @@
   varying vec2 vUv;
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
   </script>
 
