@@ -3,6 +3,10 @@ import numpy as np
 import numpy.ma as ma
 
 def clamp(value, low=0.0, high=1.0):
+    if low > high:
+        tmp = low
+        low = high
+        high = tmp
     value = min(value, high)
     value = max(value, low)
     return value

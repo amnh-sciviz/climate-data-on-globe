@@ -18,7 +18,7 @@ parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=120, hel
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=60, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=80, help="Points per particle")
 parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.8, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=1800, help="Number of particles to display")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
 
 args = parser.parse_args()
 
@@ -31,7 +31,7 @@ VELOCITY_MULTIPLIER = args.VELOCITY_MULTIPLIER
 DISPLAY_PARTICLES = args.DISPLAY_PARTICLES
 
 PARTICLES = PARTICLES_PER_COL * PARTICLES_PER_ROW
-LAT_RANGE = (-80, 80) # latitude is represented from -80° to 80° with a 1/3° resolution
+LAT_RANGE = (80, -80) # latitude is represented from -80° to 80° with a 1/3° resolution
 LNG_RANGE = (20, 420) # longitude is represented from  as 20° to 420°
 LAT_RANGE_SAMPLE = LAT_RANGE
 LNG_RANGE_SAMPLE = (40, 400)
