@@ -14,6 +14,20 @@ var CONFIG = {
     "radius": 0.5,
     "minMag": 0.33,
     "precision": 0.01,
-    "animationMs": 3000
+    "animationMs": 3000,
+    "frames": [
+      "data/sst/frame001.png",
+      "data/sst/frame002.png",
+      "data/sst/frame003.png",
+      "data/sst/frame004.png",
+      "data/sst/frame005.png",
+      "data/sst/frame006.png",
+      "data/sst/frame007.png",
+      "data/sst/frame008.png",
+      "data/sst/frame009.png",
+      "data/sst/frame010.png",
+      "data/sst/frame011.png",
+      "data/sst/frame012.png"
+    ]
   }
 };

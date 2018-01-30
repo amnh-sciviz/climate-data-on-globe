@@ -9,7 +9,7 @@
 </head>
 <body>
 
-  <script type="x-shader/x-vertex" id="vertexShader">
+  <script type="x-shader/x-vertex" id="particleVertexShader">
   uniform float yearProgress;
   uniform float animationProgress;
 
@@ -74,10 +74,32 @@
   }
   </script>
 
-  <script type="x-shader/x-fragment" id="fragmentShader">
+  <script type="x-shader/x-fragment" id="particleFragmentShader">
   varying vec4 vColor;
   void main() {
     gl_FragColor = vColor;
+  }
+  </script>
+
+  <script type="x-shader/x-vertex" id="imageVertexShader">
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+  }
+  </script>
+
+  <script type="x-shader/x-fragment" id="imageFragmentShader">
+  uniform sampler2D fromTexture;
+  uniform sampler2D toTexture;
+  uniform float mu;
+  varying vec2 vUv;
+
+  void main() {
+    vec4 fromColor = texture2D(fromTexture, vUv);
+    vec4 toColor = texture2D(toTexture, vUv);
+    vec4 destColor = mix(fromColor, toColor, mu);
+    gl_FragColor = destColor;
   }
   </script>
 

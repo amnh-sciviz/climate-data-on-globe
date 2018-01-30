@@ -58,17 +58,150 @@ var Globe = (function() {
     this.particleCount = this.opt.particleCount;
     this.pointsPerParticle = this.opt.pointsPerParticle;
 
+    this.frames = _.map(this.opt.frames, function(path){
+      return {
+        path: path,
+        texture: false
+      }
+    });
+
     var offsets = _.range(this.particleCount);
     this.offsets = _.map(offsets, function(v){ return Math.random(); });
 
     this.preprocessData(this.opt.data);
-
-    this.loadEarth();
+    this.initScene();
     this.loadGeojson(this.opt.geojson);
-    this.loadData();
+    this.loadParticles();
   };
 
-  Globe.prototype.loadData = function() {
+  Globe.prototype.initScene = function() {
+    var _this = this;
+    var w = this.$el.width();
+    var h = this.$el.height();
+    var radius = this.opt.radius;
+
+    // init renderer
+    this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.setSize(w, h);
+    this.$el.append(this.renderer.domElement);
+
+    // init scene
+    this.scene = new THREE.Scene();
+
+    // init camera
+    var viewAngle = this.opt.viewAngle;
+    var aspect = w / h;
+    var near = this.opt.near;
+    var far = this.opt.far;
+    this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
+    this.camera.position.z = radius * 4.0;
+
+    // ambient light
+    var aLight = new THREE.AmbientLight(0x888888);
+    this.scene.add(aLight);
+
+    // init controls
+    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+  };
+
+  Globe.prototype.loadEarth = function(from, to, mu) {
+    var radius = this.opt.radius;
+
+    // init globe
+    var geo = new THREE.SphereGeometry(radius, 64, 64);
+    var uniforms = {
+      fromTexture: {
+        type: 't',
+        value: from
+      },
+      mu: {
+        type: 'f',
+        value: mu
+      },
+      toTexture: {
+        type: 't',
+        value: to
+      }
+    };
+    var mat = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: document.getElementById('imageVertexShader').textContent,
+      fragmentShader: document.getElementById('imageFragmentShader').textContent
+    });
+
+    this.earth = new THREE.Mesh(geo, mat);
+    this.earth.rotation.y = -Math.PI/2;
+
+    // equator
+    // var eqGeo = new THREE.CircleGeometry(radius*1.0001, 64);
+    // eqGeo.vertices.shift();
+    // eqGeo.vertices.push(eqGeo.vertices[0].clone());
+    // var eqMat = new THREE.LineBasicMaterial( { color: 0x00f6ff } );
+    // var equator = new THREE.Line(eqGeo, eqMat);
+    // equator.rotation.x = Math.PI / 2;
+    // this.scene.add(equator);
+
+    // add north arrow
+    var dir = new THREE.Vector3(0, 1, 0);
+    var origin = new THREE.Vector3(0, 0, 0);
+    var length = radius * 1.5;
+    var hex = 0x00ff00;
+    var northArrow = new THREE.ArrowHelper(dir, origin, length, hex);
+    this.earth.add(northArrow);
+
+    // add south arrow
+    dir = new THREE.Vector3(0, -1, 0);
+    hex = 0xff0000;
+    var southArrow = new THREE.ArrowHelper(dir, origin, length, hex);
+    this.earth.add(southArrow);
+    this.scene.add(this.earth);
+  };
+
+  Globe.prototype.loadEarthTexture = function(from, to, mu) {
+    var loader = new THREE.TextureLoader();
+    var _this = this;
+    var earth = this.earth;
+
+    var loadImageTexture = function(frame){
+      var deferred = $.Deferred();
+
+      if (frame.texture) {
+        // console.log('Found existing '+frame.path);
+        setTimeout(function(){
+          deferred.resolve(frame.texture);
+        },10);
+      } else {
+        // console.log('Loading path '+frame.path)
+        var loader = new THREE.TextureLoader();
+        loader.load(frame.path, function(texture){
+          frame.texture = texture;
+          deferred.resolve(texture);
+        });
+      }
+      return deferred.promise();
+    };
+
+    $.when(
+      loadImageTexture(from),
+      loadImageTexture(to)
+
+    ).done(function(textureFrom, textureTo){
+      if (earth) _this.updateEarthTexture(textureFrom, textureTo, mu);
+      else _this.loadEarth(textureFrom, textureTo, mu);
+    });
+  };
+
+  Globe.prototype.loadGeojson = function(geojsonData){
+    var opt = {
+      color: 0x555555
+    };
+    var radius = this.opt.radius * 1.001;
+
+    drawThreeGeo(geojsonData, radius, 'sphere', opt, this.scene);
+  };
+
+  Globe.prototype.loadParticles = function() {
     var data = this.data;
     var particleCount = this.particleCount;
     var pointsPerParticle = this.pointsPerParticle;
@@ -141,8 +274,8 @@ var Globe = (function() {
     };
     var mat = new THREE.ShaderMaterial({
       uniforms: uniforms,
-      vertexShader: document.getElementById('vertexShader').textContent,
-      fragmentShader: document.getElementById('fragmentShader').textContent,
+      vertexShader: document.getElementById('particleVertexShader').textContent,
+      fragmentShader: document.getElementById('particleFragmentShader').textContent,
       blending: THREE.AdditiveBlending,
       // depthTest: false,
       transparent: true,
@@ -154,77 +287,6 @@ var Globe = (function() {
     this.lineGeo = geo;
     this.lineMat = mat;
     this.scene.add(line);
-  };
-
-  Globe.prototype.loadEarth = function() {
-    var _this = this;
-    var w = this.$el.width();
-    var h = this.$el.height();
-    var radius = this.opt.radius;
-
-    // init renderer
-    this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
-    this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setSize(w, h);
-    this.$el.append(this.renderer.domElement);
-
-    // init scene
-    this.scene = new THREE.Scene();
-
-    // init camera
-    var viewAngle = this.opt.viewAngle;
-    var aspect = w / h;
-    var near = this.opt.near;
-    var far = this.opt.far;
-    this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
-    this.camera.position.z = radius * 4.0;
-
-    // ambient light
-    var aLight = new THREE.AmbientLight(0x888888);
-    this.scene.add(aLight);
-
-    // init controls
-    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-
-    // init globe
-    var geometry = new THREE.SphereGeometry(radius, 64, 64);
-    var material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-
-    this.earth = new THREE.Mesh(geometry, material);
-    this.earth.rotation.y = Math.PI;
-
-    // equator
-    // var eqGeo = new THREE.CircleGeometry(radius*1.0001, 64);
-    // eqGeo.vertices.shift();
-    // eqGeo.vertices.push(eqGeo.vertices[0].clone());
-    // var eqMat = new THREE.LineBasicMaterial( { color: 0x00f6ff } );
-    // var equator = new THREE.Line(eqGeo, eqMat);
-    // equator.rotation.x = Math.PI / 2;
-    // this.scene.add(equator);
-
-    // add north arrow
-    var dir = new THREE.Vector3(0, 1, 0);
-    var origin = new THREE.Vector3(0, 0, 0);
-    var length = radius * 1.5;
-    var hex = 0x00ff00;
-    var northArrow = new THREE.ArrowHelper(dir, origin, length, hex);
-    this.earth.add(northArrow);
-
-    // add south arrow
-    dir = new THREE.Vector3(0, -1, 0);
-    hex = 0xff0000;
-    var southArrow = new THREE.ArrowHelper(dir, origin, length, hex);
-    this.earth.add(southArrow);
-    this.scene.add(this.earth);
-  };
-
-  Globe.prototype.loadGeojson = function(geojsonData){
-    var opt = {
-      color: 0x555555
-    };
-    var radius = this.opt.radius * 1.001;
-
-    drawThreeGeo(geojsonData, radius, 'sphere', opt, this.scene);
   };
 
   Globe.prototype.onResize = function(){
@@ -259,6 +321,11 @@ var Globe = (function() {
 
     for (var i=0; i<intervals; i++) {
       for (var j=0; j<particleCount; j++) {
+
+        // retrieve coordinates from image data
+        var lons = [];
+        var lats = [];
+        var mags = [];
         for (var k=0; k<pointsPerParticle; k++) {
           var start = i * offsetPerInterval * offsetPerPoint + j * offsetPerParticle + k * offsetPerPoint;
           var lon = round(imgData[start] / 255.0, precision);
@@ -270,6 +337,21 @@ var Globe = (function() {
           lon = lerp(-270, 90, lon+lonDec);
           lat = lerp(90, -90, lat+latDec);
           mag = Math.max(minMag, mag + magDec);
+          lons.push(lon);
+          lats.push(lat);
+          mags.push(mag);
+        }
+
+        // TODO: smooth out the coordinates
+        // var degree = 3;
+        // lons = smooth(lons, degree);
+        // lats = smooth(lats, degree);
+
+        // add the data
+        for (var k=0; k<pointsPerParticle; k++) {
+          var lon = lons[k];
+          var lat = lats[k];
+          var mag = mags[k];
           var point = toSphere(lon, lat, radius);
           var index = i * particleCount * pointsPerParticle * 4 + j * pointsPerParticle * 4 + k * 4;
           data[index] = point[0]; // x
@@ -288,9 +370,42 @@ var Globe = (function() {
     var now = new Date();
     var animationProgress = (now % animationMs) / animationMs;
 
+    this.updateEarth(yearProgress);
     this.updateGlobeData(yearProgress, animationProgress);
     this.renderer.render(this.scene, this.camera);
     this.controls.update();
+  };
+
+  Globe.prototype.updateEarth = function(yearProgress){
+    var frames = this.frames;
+    var m = yearProgress * 12;
+    var from = Math.floor(m);
+    var to = from + 1;
+    var mu = m - from;
+    if (to >= 12) to = 0;
+
+    if (this.from != from) {
+      this.loadEarthTexture(frames[from], frames[to], mu);
+      this.from = from;
+      this.to = to;
+
+    } else {
+      this.updateEarthTextureMu(mu);
+    }
+  };
+
+  Globe.prototype.updateEarthTexture = function(from, to, mu){
+    if (!this.earth) return false;
+    // console.log('updating '+mu)
+    var uniforms = this.earth.material.uniforms;
+    uniforms.fromTexture.value = from;
+    uniforms.toTexture.value = to;
+    uniforms.mu.value = mu;
+  };
+
+  Globe.prototype.updateEarthTextureMu = function(mu){
+    if (!this.earth) return false;
+    this.earth.material.uniforms.mu.value = mu;
   };
 
   Globe.prototype.updateGlobeData = function(yearProgress, animationProgress){
