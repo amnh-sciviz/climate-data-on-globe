@@ -57,6 +57,7 @@ print "Calculating means..."
 
 uData = []
 vData = []
+tData = []
 
 for m in range(12):
     monthData = data[m]
@@ -64,23 +65,27 @@ for m in range(12):
     print "Month %s" % (m+1)
     monthUData = []
     monthVData = []
+    monthTData = []
 
     for lat in range(lats):
         for lon in range(lons):
-            u, v = uvDataAt(lon, lat, monthData)
+            u, v, t = uvDataAt(lon, lat, monthData)
             i = lat * lons + lon
             monthUData.append(u)
             monthVData.append(v)
+            monthTData.append(t)
             sys.stdout.write('\r')
             sys.stdout.write("%s%%" % round(1.0*i/total*100,1))
             sys.stdout.flush()
 
     uData.append(monthUData)
     vData.append(monthVData)
+    tData.append(monthTData)
 
 jsonOut = {
     "u": uData,
     "v": vData,
+    "t": tData,
     "lons": lons,
     "lats": lats
 }
