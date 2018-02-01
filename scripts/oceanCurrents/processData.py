@@ -12,12 +12,12 @@ import sys
 parser = argparse.ArgumentParser()
 # Source: https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_third-deg
 # Doc: ftp://podaac-ftp.jpl.nasa.gov/allData/oscar/preview/L4/oscar_third_deg/docs/oscarthirdguide.pdf
-parser.add_argument('-in', dest="INPUT_FILE", default="../data/downloaded/oscar_vel2016.nc", help="Input NetCDF data file")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/oscar_vel2016.json", help="Output json file")
+parser.add_argument('-in', dest="INPUT_FILE", default="../../data/ocean_currents/oscar_vel2016.nc", help="Input NetCDF data file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/ocean_currents/oscar_vel2016.json", help="Output json file")
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=120, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=60, help="Particles per col")
-parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=80, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.8, help="Velocity mulitplier")
+parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.6, help="Velocity mulitplier")
 parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
 
 args = parser.parse_args()
@@ -108,7 +108,7 @@ for month in range(12):
 
                 # move particle based on velocity
                 lng += u * VELOCITY_MULTIPLIER
-                lat += (-1.0 * v) * VELOCITY_MULTIPLIER
+                lat += v * VELOCITY_MULTIPLIER
 
                 # if lng < -180 or lng > 180:
                 #     break
@@ -153,7 +153,7 @@ for month in range(12):
     # draw = ImageDraw.Draw(im)
     # for particle in addParticles:
     #     coordinates = particle["points"]
-    #     curve = [(norm(c[0], -180, 180, clamp=False) * WIDTH, norm(c[1], -90, 90, clamp=False) * HEIGHT) for c in coordinates]
+    #     curve = [(norm(c[0], 40, 400, clamp=False) * WIDTH, norm(c[1], 90, -90, clamp=False) * HEIGHT) for c in coordinates]
     #     draw.line(curve, fill=255)
     # del draw
     # im.save("monthDraw.png", "PNG")

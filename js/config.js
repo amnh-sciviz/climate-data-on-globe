@@ -1,7 +1,7 @@
 var CONFIG = {
-  "geojson": "data/downloaded/countries_states.geojson",
-  "data": "data/oscar_vel2016.png",
-  "meta": "data/oscar_vel2016_meta.json",
+  "geojson": "data/countries_states.geojson",
+  "data": "data/ocean_currents/oscar_vel2016.png",
+  "meta": "data/ocean_currents/oscar_vel2016_meta.json",
   "yearMs": 120000,
   "calendar": {
     "marker": "#marker"
