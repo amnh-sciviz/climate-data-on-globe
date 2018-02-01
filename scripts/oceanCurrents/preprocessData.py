@@ -26,8 +26,8 @@ vs = ds.variables['v'][:]
 depth = 0
 
 timeCount = len(us) # this should be 72, i.e. ~5 day interval
-lats = len(us[0][depth]) # this should be 1201
-lons = len(us[0][depth][0]) # this should be 481;
+lats = len(us[0][depth]) # this should be 481
+lons = len(us[0][depth][0]) # this should be 1201;
 total = lats * lons
 print "%s measurements found with %s degrees (lng) by %s degrees (lat)" % (timeCount, lons, lats)
 
@@ -41,10 +41,10 @@ for month in range(12):
     monthUData = []
     monthVData = []
 
-    for lon in range(lons):
-        for lat in range(lats):
+    for lat in range(lats):
+        for lon in range(lons):
             u, v = uvDataAt(month, lon, lat, us, vs)
-            i = lon * lats + lat
+            i = lat * lons + lon
             monthUData.append(u)
             monthVData.append(v)
             sys.stdout.write('\r')
@@ -56,7 +56,9 @@ for month in range(12):
 
 jsonOut = {
     "u": uData,
-    "v": vData
+    "v": vData,
+    "lats": lats,
+    "lons": lons
 }
 
 # Write to file

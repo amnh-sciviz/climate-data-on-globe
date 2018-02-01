@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# python jsonToPng.py -in ../data/ocean_currents/oscar_vel2016.json -meta ../data/ocean_currents/oscar_vel2016_meta.json -out ../data/ocean_currents/oscar_vel2016.png -range " -180,180;90,-90;0,2"
+
 import argparse
 import json
 from lib import *
@@ -8,21 +10,20 @@ from pprint import pprint
 import sys
 
 parser = argparse.ArgumentParser()
-# Source: https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_third-deg
-# Doc: ftp://podaac-ftp.jpl.nasa.gov/allData/oscar/preview/L4/oscar_third_deg/docs/oscarthirdguide.pdf
-parser.add_argument('-in', dest="INPUT_FILE", default="../../data/ocean_currents/oscar_vel2016.json", help="Input JSON data file")
+
+parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000.json", help="Input JSON data file")
 parser.add_argument('-rgb', dest="RGB", default="lon,lat,mag", help="Key to map to red, green, blue")
-parser.add_argument('-range', dest="RANGE", default="-180,180;90,-90;0,1", help="Ranges for RGB values")
+parser.add_argument('-range', dest="RANGE", default="-180,180;90,-90;208,239", help="Ranges for RGB values")
 parser.add_argument('-dim', dest="DIM", default="intervals,particleCount,pointsPerParticle", help="Keys for dimension counts")
-parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../../data/ocean_currents/oscar_vel2016_meta.json", help="Output meta JSON file")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/ocean_currents/oscar_vel2016.png", help="Output PNG file")
+parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000_meta.json", help="Output meta JSON file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000.png", help="Output PNG file")
 
 args = parser.parse_args()
 
 INPUT_FILE = args.INPUT_FILE
-RGB = args.RGB.split(",")
-DIM = args.DIM.split(",")
-RANGE = [r.split(",") for r in args.RANGE.split(";")]
+RGB = args.RGB.strip().split(",")
+DIM = args.DIM.strip().split(",")
+RANGE = [r.split(",") for r in args.RANGE.strip().split(";")]
 OUTPUT_META_FILE = args.OUTPUT_META_FILE
 OUTPUT_FILE = args.OUTPUT_FILE
 
