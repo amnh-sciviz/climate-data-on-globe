@@ -13,27 +13,8 @@ def clamp(value, low=0.0, high=1.0):
     value = max(value, low)
     return value
 
-def getColor(grad, amount):
-    gradLen = len(grad)
-    i = (gradLen-1) * amount
-    remainder = i % 1
-    rgb = (0,0,0)
-    if remainder > 0:
-        rgb = lerpColor(grad[int(i)], grad[int(i)+1], remainder)
-    else:
-        rgb = grad[int(i)]
-    return rgb
-
-def hex2rgb(hex):
-  # "#FFFFFF" -> [255,255,255]
-  return tuple([int(hex[i:i+2], 16) for i in range(1,6,2)])
-
-def lerpColor(s, f, amount):
-    rgb = [
-      int(s[j] + amount * (f[j]-s[j]))
-      for j in range(3)
-    ]
-    return tuple(rgb)
+def lerp(a, b, mu):
+    return (b-a) * mu + a
 
 def mean(data):
     n = len(data)

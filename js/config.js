@@ -16,18 +16,18 @@ var CONFIG = {
     "precision": 0.01,
     "animationMs": 3000,
     "frames": [
-      "data/sst/frame001.png",
-      "data/sst/frame002.png",
-      "data/sst/frame003.png",
-      "data/sst/frame004.png",
-      "data/sst/frame005.png",
-      "data/sst/frame006.png",
-      "data/sst/frame007.png",
-      "data/sst/frame008.png",
-      "data/sst/frame009.png",
-      "data/sst/frame010.png",
-      "data/sst/frame011.png",
-      "data/sst/frame012.png"
+      "data/ocean_currents/temperature/2016-01.png",
+      "data/ocean_currents/temperature/2016-02.png",
+      "data/ocean_currents/temperature/2016-03.png",
+      "data/ocean_currents/temperature/2016-04.png",
+      "data/ocean_currents/temperature/2016-05.png",
+      "data/ocean_currents/temperature/2016-06.png",
+      "data/ocean_currents/temperature/2016-07.png",
+      "data/ocean_currents/temperature/2016-08.png",
+      "data/ocean_currents/temperature/2016-09.png",
+      "data/ocean_currents/temperature/2016-10.png",
+      "data/ocean_currents/temperature/2016-11.png",
+      "data/ocean_currents/temperature/2016-12.png"
     ]
   }
 };
