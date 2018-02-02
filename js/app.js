@@ -54,6 +54,8 @@ var App = (function() {
       }
       _this.onReady(responses[0], responses.slice(1));
     });
+
+    this.colorKey = new ColorKey(this.opt.colorKey);
   };
 
   App.prototype.loadListeners = function(){

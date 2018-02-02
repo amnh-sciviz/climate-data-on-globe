@@ -4,6 +4,10 @@ var CONFIG = {
   "calendar": {
     "marker": "#marker"
   },
+  "colorKey": {
+    "el": "#color-key-canvas",
+    "gradient": "data/colorGradientMagma.json"
+  },
   "globes": [
     {
       "el": '#ocean-currents',
