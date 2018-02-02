@@ -11,12 +11,12 @@ import sys
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000.json", help="Input JSON data file")
+parser.add_argument('-in', dest="INPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000.json", help="Input JSON data file")
 parser.add_argument('-rgb', dest="RGB", default="lon,lat,mag", help="Key to map to red, green, blue")
 parser.add_argument('-range', dest="RANGE", default="-180,180;90,-90;208,239", help="Ranges for RGB values")
 parser.add_argument('-dim', dest="DIM", default="intervals,particleCount,pointsPerParticle", help="Keys for dimension counts")
-parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000_meta.json", help="Output meta JSON file")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000.png", help="Output PNG file")
+parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../data/atmosphere_wind/gfsanl_4_25000_meta.json", help="Output meta JSON file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000.png", help="Output PNG file")
 
 args = parser.parse_args()
 
@@ -61,6 +61,8 @@ else:
     print "You must have 2 or 3 dimensions of data"
     sys.exit(1)
 
+totalPixels = WIDTH * HEIGHT
+
 # Create two blank image
 PRECISION = 0.01
 im = Image.new("RGB", (WIDTH, HEIGHT*2), (0, 0, 0))
@@ -87,6 +89,10 @@ for row in range(HEIGHT):
         thisRow = row * 2
         pixels[col, thisRow] = (int(round(r * 255.0)), int(round(g * 255.0)), int(round(b * 255.0)))
         pixels[col, thisRow+1] = (int(round(rd * 255.0)), int(round(gd * 255.0)), int(round(bd * 255.0)))
+
+        sys.stdout.write('\r')
+        sys.stdout.write("%s%%" % round(1.0*(row * WIDTH + col)/totalPixels*100,1))
+        sys.stdout.flush()
 im.save(OUTPUT_FILE)
 print "Saved file %s" % OUTPUT_FILE
 

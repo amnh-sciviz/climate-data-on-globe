@@ -102,7 +102,7 @@ var Globe = (function() {
     this.scene.add(aLight);
 
     // init controls
-    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new THREE.OrbitControls(this.camera, $("#globes")[0]);
   };
 
   Globe.prototype.loadEarth = function(from, to, mu) {
@@ -194,7 +194,7 @@ var Globe = (function() {
 
   Globe.prototype.loadGeojson = function(geojsonData){
     var opt = {
-      color: 0x555555
+      color: this.opt.geojsonLineColor
     };
     var radius = this.opt.radius * 1.001;
 

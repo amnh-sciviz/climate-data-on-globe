@@ -20,7 +20,7 @@ var App = (function() {
       var context = canvas.getContext('2d');
       context.drawImage(img, 0, 0, w, h);
       var data = context.getImageData(0, 0, w, h).data;
-      deferred.resolve(data);
+      deferred.resolve([data]);
     };
 
     img.src = filename;
@@ -38,30 +38,53 @@ var App = (function() {
   App.prototype.init = function(){
     var _this = this;
 
-    $.when(
-      $.getJSON(this.opt.geojson),
-      $.getJSON(this.opt.meta),
-      getPNG(this.opt.data)
+    var promises = [$.getJSON(this.opt.geojson)];
+    var globes = this.opt.globes;
 
-    ).done(function(geojson, metadata, data){
-      _this.onReady(geojson[0], metadata[0], data);
+    _.each(globes, function(globe){
+      promises.push($.getJSON(globe.meta));
+      promises.push(getPNG(globe.data));
+    });
+
+    $.when.apply(null, promises).done(function () {
+      var responses = []
+      for(var arg = 0; arg < arguments.length; ++ arg) {
+        var response = arguments[arg][0];
+        responses.push(response);
+      }
+      _this.onReady(responses[0], responses.slice(1));
     });
   };
 
   App.prototype.loadListeners = function(){
     var _this = this;
 
+    var globes = this.globes;
+
     $(window).on('resize', function(){
-      _this.globe.onResize();
+      _.each(globes, function(globe){
+        globe.onResize();
+      });
     });
   };
 
-  App.prototype.onReady = function(geojson, metadata, data){
+  App.prototype.onReady = function(geojson, globeDatas){
     console.log("All globe data loaded");
 
     $('.loading').remove();
 
-    this.globe = new Globe(_.extend({}, metadata, this.opt.globe , {"geojson": geojson, "data": data}));
+    this.globes = [];
+    var globes = [];
+    var globesOpt = this.opt.globes;
+
+    for (var i=0; i<globeDatas.length; i+=2) {
+      var metadata = globeDatas[i];
+      var data = globeDatas[i+1];
+
+      globes.push(new Globe(_.extend({}, metadata, globesOpt[i/2], {"geojson": geojson, "data": data})));
+    }
+
+    this.globes = globes;
     this.calendar = new Calendar(_.extend({}, this.opt.calendar));
 
     this.loadListeners();
@@ -76,7 +99,10 @@ var App = (function() {
     var yearMs = this.opt.yearMs;
     var yearProgress = (now % yearMs) / yearMs;
 
-    this.globe.render(yearProgress);
+    _.each(this.globes, function(globe){
+      globe.render(yearProgress);
+    });
+
     this.calendar.render(yearProgress);
 
     requestAnimationFrame(function(){ _this.render(); });

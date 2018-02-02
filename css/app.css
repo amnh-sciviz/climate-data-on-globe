@@ -10,15 +10,26 @@
   overflow: hidden;
 }
 
-.globe,
+.globes,
 .calendar {
   width: 100%;
   position: absolute;
   left: 0;
 }
+.globes {
+  height: 66.6667vh;
+  bottom: 16.6667vh;
+}
 .globe {
-  height: 75vh;
-  bottom: 5vh;
+  position: absolute;
+  width: 33.33333%;
+  height: 100%;
+  top: 0;
+  left: 16.66667%;
+}
+.globe:last-child {
+  left: auto;
+  right: 16.66667%;
 }
 .calendar {
   width: 80%;
@@ -49,4 +60,10 @@
   left: 0;
   bottom: 0;
   margin-left: 1.8%;
+}
+.loading {
+  text-align: center;
+}
+.loading h1 {
+  margin: 10vh auto;
 }
