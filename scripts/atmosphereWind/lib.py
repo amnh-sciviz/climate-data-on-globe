@@ -67,12 +67,24 @@ def uvDataAt(lon, lat, data):
     ts = []
     for d in data:
         triple = d[lat][lon]
-        u = triple[0]
-        v = triple[1]
-        t = triple[2]
+        t = triple[0] - 273.15 # convert kelvin to celsius
+        u = triple[1]
+        v = triple[2]
         if u is not False and v is not False:
             us.append(u)
             vs.append(v)
         if t is not False:
             ts.append(t)
+        # if len(us) > 0 and len(vs) > 0 and len(ts) > 0:
+        #     break
+    # u = 0
+    # v = 0
+    # t = 0
+    # if len(us) > 0:
+    #     u = us[0]
+    # if len(vs) > 0:
+    #     v = vs[0]
+    # if len(ts) > 0:
+    #     t = ts[0]
+    # return (u, v, t)
     return (mean(us), mean(vs), mean(ts))
