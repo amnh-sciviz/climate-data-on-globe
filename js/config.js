@@ -7,6 +7,7 @@ var CONFIG = {
   "globes": [
     {
       "el": '#ocean-currents',
+      "title": "Ocean surface currents and<br />sea surface temperature",
       "data": "data/ocean_currents/oscar_vel2016.png",
       "meta": "data/ocean_currents/oscar_vel2016_meta.json",
       "viewAngle": 45,
@@ -33,6 +34,7 @@ var CONFIG = {
       ]
     },{
       "el": '#atmosphere-wind',
+      "title": "Wind and air temperature<br />in the troposphere",
       "data": "data/atmosphere_wind/gfsanl_4_25000.png",
       "meta": "data/atmosphere_wind/gfsanl_4_25000_meta.json",
       "viewAngle": 45,

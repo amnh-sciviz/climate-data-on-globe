@@ -17,8 +17,8 @@
   left: 0;
 }
 .globes {
-  height: 66.6667vh;
-  bottom: 16.6667vh;
+  height: 60vh;
+  bottom: 24vh;
 }
 .globe {
   position: absolute;
@@ -26,10 +26,16 @@
   height: 100%;
   top: 0;
   left: 16.66667%;
+  text-align: center;
 }
 .globe:last-child {
   left: auto;
   right: 16.66667%;
+}
+.globe h2 {
+  color: #aaa;
+  font-weight: normal;
+  margin: 1rem auto -1rem;
 }
 .calendar {
   width: 80%;

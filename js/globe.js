@@ -58,6 +58,8 @@ var Globe = (function() {
     this.particleCount = this.opt.particleCount;
     this.pointsPerParticle = this.opt.pointsPerParticle;
 
+    this.$el.append($('<h2>'+this.opt.title+'</h2>'))
+
     this.frames = _.map(this.opt.frames, function(path){
       return {
         path: path,
