@@ -23,7 +23,7 @@ parser.add_argument('-latsample', dest="LAT_RANGE_SAMPLE", default="90,-90", hel
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=240, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=120, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.0008, help="Velocity mulitplier")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.6, help="Velocity mulitplier")
 parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
 parser.add_argument('-rand', dest="RANDOM", type=int, default=1, help="(1) if we should show random particles or (0) particles sorted by velocity")
 
@@ -65,16 +65,30 @@ print "%s degrees (lon) by %s degrees (lat) = %s (total)" % (lons, lats, total)
 # pixels = im.load()
 # mmin = 999
 # mmax = 0
+# umin = 999
+# umax = 0
+# vmin = 999
+# vmax = 0
 # for lat in range(lats):
 #     for lon in range(lons):
 #         u, v = uvDataAt(0, lon, lat, uData, vData, lons, lats)
 #         mag = math.sqrt(u * u + v * v)
+#
+#         if u > umax:
+#             umax = u
+#         if u < umin:
+#             umin = u
+#         if v > vmax:
+#             vmax = v
+#         if v < vmin:
+#             vmin = v
 #         if mag > mmax:
 #             mmax = mag
 #         if mag < mmin:
 #             mmin = mag
-#         # normal = norm(mag, 208, 239)
-#         normal = norm(mag, 0, 3)
+#
+#         # normal = norm(mag, 0, 3)
+#         normal = norm(mag, 0, 70)
 #         c = normal * 255.0
 #         c = int(round(c))
 #         pixels[lon, lat] = (c, c, c)
@@ -83,7 +97,9 @@ print "%s degrees (lon) by %s degrees (lat) = %s (total)" % (lons, lats, total)
 #         sys.stdout.write('\r')
 #         sys.stdout.write("%s%%" % round(1.0*i/total*100,1))
 #         sys.stdout.flush()
-# print "Range: [%s, %s]" % (mmin, mmax)
+# print "U range: [%s, %s]" % (umin, umax)
+# print "V range: [%s, %s]" % (vmin, vmax)
+# print "Mag range: [%s, %s]" % (mmin, mmax)
 # im.save("monthData.png")
 # sys.exit(1)
 
@@ -187,7 +203,7 @@ for month in range(12):
     #             prev = coordinates[i-1]
     #             p0 = (norm(prev[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(prev[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
     #             p1 = (norm(point[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(point[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
-    #             alpha = int(round(norm(point[2], 208, 239) * 255))
+    #             alpha = int(round(norm(point[2], 0, 70) * 255))
     #             # alpha = int(round(norm(point[2], 0, 2) * 255))
     #             draw.line([p0, p1], fill=(255, 255, 255, alpha))
     # del draw

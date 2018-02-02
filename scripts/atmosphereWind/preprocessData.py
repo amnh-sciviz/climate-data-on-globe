@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# python preprocessData.py -in "../../data/atmosphere_wind/100000/gfsanl_4_%s_0000_000.csv.gz" -out "../../data/atmosphere_wind/gfsanl_4_100000_monthly.json"
+
 import argparse
 import datetime
 import json

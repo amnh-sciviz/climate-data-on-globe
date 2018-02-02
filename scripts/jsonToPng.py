@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000.json", help="Input JSON data file")
 parser.add_argument('-rgb', dest="RGB", default="lon,lat,mag", help="Key to map to red, green, blue")
-parser.add_argument('-range', dest="RANGE", default="-180,180;90,-90;208,239", help="Ranges for RGB values")
+parser.add_argument('-range', dest="RANGE", default="-180,180;90,-90;0,50", help="Ranges for RGB values")
 parser.add_argument('-dim', dest="DIM", default="intervals,particleCount,pointsPerParticle", help="Keys for dimension counts")
 parser.add_argument('-meta', dest="OUTPUT_META_FILE", default="../data/atmosphere_wind/gfsanl_4_25000_meta.json", help="Output meta JSON file")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000.png", help="Output PNG file")

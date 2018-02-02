@@ -5,6 +5,7 @@
 grib2json
 node_modules/
 oscar_vel2016.json
+gfsanl_4_*000.json
 *_monthly.json
 oscar_vel2016_v*.json
 monthData.png
