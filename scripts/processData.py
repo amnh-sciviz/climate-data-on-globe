@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python processData.py -in ../data/ocean_currents/oscar_vel2016_monthly.json -out ../data/ocean_currents/oscar_vel2016.json -lon " 20,420" -lat " 80,-80" -lonsample " 40,400" -latsample " 80,-80" -vel 0.6 -sort 1
+# python processData.py -in ../data/ocean_currents/oscar_vel2016_monthly.json -out ../data/ocean_currents/oscar_vel2016.json -lon " 20,420" -lat " 80,-80" -lonsample " 40,400" -latsample " 80,-80" -vel 0.6 -rand 0 -ppr 120 -ppc 60
 
 import argparse
 import datetime
@@ -187,7 +187,8 @@ for month in range(12):
     #             prev = coordinates[i-1]
     #             p0 = (norm(prev[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(prev[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
     #             p1 = (norm(point[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(point[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
-    #             alpha = int(round(norm(point[2], 208, 239) * 255))
+    #             # alpha = int(round(norm(point[2], 208, 239) * 255))
+    #             alpha = int(round(norm(point[2], 0, 2) * 255))
     #             draw.line([p0, p1], fill=(255, 255, 255, alpha))
     # del draw
     # im.save("monthDraw.png", "PNG")
