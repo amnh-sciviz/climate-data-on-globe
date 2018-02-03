@@ -189,6 +189,7 @@ var Globe = (function() {
       loadImageTexture(to)
 
     ).done(function(textureFrom, textureTo){
+      _this.loadingEarthTexture = false;
       if (earth) _this.updateEarthTexture(textureFrom, textureTo, mu);
       else _this.loadEarth(textureFrom, textureTo, mu);
     });
@@ -379,6 +380,7 @@ var Globe = (function() {
   };
 
   Globe.prototype.updateEarth = function(yearProgress){
+    if (this.loadingEarthTexture) return false;
     var frames = this.frames;
     var m = yearProgress * 12;
     var from = Math.floor(m);
@@ -387,6 +389,7 @@ var Globe = (function() {
     if (to >= 12) to = 0;
 
     if (this.from != from) {
+      this.loadingEarthTexture = true;
       this.loadEarthTexture(frames[from], frames[to], mu);
       this.from = from;
       this.to = to;
