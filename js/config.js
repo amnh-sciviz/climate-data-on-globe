@@ -47,7 +47,7 @@ var CONFIG = {
       "radius": 0.5,
       "minMag": 0.0,
       "precision": 0.01,
-      "animationMs": 3000,
+      "animationMs": 1000,
       "geojsonLineColor": 0xdddddd,
       "frames": [
         "data/atmosphere_wind/temperature/2016-01.png",

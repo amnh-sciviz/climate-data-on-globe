@@ -23,7 +23,7 @@ parser.add_argument('-latsample', dest="LAT_RANGE_SAMPLE", default="90,-90", hel
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=240, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=120, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.6, help="Velocity mulitplier")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.03, help="Velocity mulitplier")
 parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
 parser.add_argument('-rand', dest="RANDOM", type=int, default=1, help="(1) if we should show random particles or (0) particles sorted by velocity")
 
@@ -42,6 +42,7 @@ LON_RANGE_SAMPLE = [float(d) for d in args.LON_RANGE_SAMPLE.strip().split(",")]
 LAT_RANGE_SAMPLE = [float(d) for d in args.LAT_RANGE_SAMPLE.strip().split(",")]
 RANDOM = (args.RANDOM > 0)
 PRECISION = 3
+MAX_INCREMENT = 0.5
 
 PARTICLES = PARTICLES_PER_COL * PARTICLES_PER_ROW
 
@@ -108,6 +109,7 @@ data = []
 
 randomCols = [random.randint(0, PARTICLES_PER_COL-1) for col in range(PARTICLES_PER_COL)]
 randomRows = [random.randint(0, PARTICLES_PER_ROW-1) for row in range(PARTICLES_PER_ROW)]
+indices = []
 
 # go through each time interval
 for month in range(12):
@@ -122,6 +124,10 @@ for month in range(12):
     # init particles
     for col in range(PARTICLES_PER_COL):
         for row in range(PARTICLES_PER_ROW):
+            particleIndex = col * PARTICLES_PER_ROW + row
+            if month > 0 and particleIndex not in indices:
+                continue
+
             yp = 1.0 * col / (PARTICLES_PER_COL-1)
             xp = 1.0 * row / (PARTICLES_PER_ROW-1)
             lon = getLon(xp, LON_RANGE_SAMPLE)
@@ -130,7 +136,6 @@ for month in range(12):
             lat = round(lat, PRECISION)
             coordinates = []
             cDistance = 0
-            particleIndex = col * PARTICLES_PER_ROW + row
 
             for j in range(POINTS_PER_PARTICLE):
                 xp = normLon(lon, LON_RANGE)
@@ -147,9 +152,15 @@ for month in range(12):
                 # if u == 0 and v == 0:
                 #     break
 
+                addLon = u * VELOCITY_MULTIPLIER
+                addLat = v * VELOCITY_MULTIPLIER
+
+                addLon = clamp(addLon, -MAX_INCREMENT, MAX_INCREMENT)
+                addLat = clamp(addLat, -MAX_INCREMENT, MAX_INCREMENT)
+
                 # move particle based on velocity
-                lon += u * VELOCITY_MULTIPLIER
-                lat += v * VELOCITY_MULTIPLIER
+                lon += addLon
+                lat += addLat
 
                 # if lon < -180 or lon > 180:
                 #     break
@@ -181,6 +192,7 @@ for month in range(12):
             pLen = len(particles)
             particles = sorted(particles, key=lambda k: k['distance'], reverse=True)
             addParticles = particles[:DISPLAY_PARTICLES]
+        indices = [p["index"] for p in addParticles]
 
     # for subsequent months, pick particles based on the first month
     else:
