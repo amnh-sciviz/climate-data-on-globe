@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python jsonToPng.py -in ../data/ocean_currents/oscar_vel2016.json -meta ../data/ocean_currents/oscar_vel2016_meta.json -out ../data/ocean_currents/oscar_vel2016.png -range " -180,180;90,-90;0,2"
+# python jsonToPng.py -in ../data/ocean_currents/oscar_vel2016.json -meta ../data/ocean_currents/oscar_vel2016_meta.json -out ../data/ocean_currents/oscar_vel2016.png -range " -180,180;90,-90;0,1"
 
 import argparse
 import json

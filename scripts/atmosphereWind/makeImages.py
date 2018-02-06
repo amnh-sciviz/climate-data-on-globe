@@ -13,10 +13,10 @@ import random
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-in', dest="INPUT_FILE", default="../../data/sea_surface_temperature/gfsanl_4_25000_monthly.json", help="Input json file")
+parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000_monthly.json", help="Input json file")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/temperature/2016-%s.png", help="Output image file")
-parser.add_argument('-grad', dest="GRADIENT", default="magma", help="Color gradient")
-parser.add_argument('-range', dest="RANGE", default="-20,40", help="Temperature range")
+parser.add_argument('-grad', dest="GRADIENT", default="anomaly", help="Color gradient")
+parser.add_argument('-range', dest="RANGE", default="-60.0,-34.0", help="Temperature range")
 parser.add_argument('-width', dest="WIDTH", type=int, default=1024, help="Target image width")
 parser.add_argument('-height', dest="HEIGHT", type=int, default=512, help="Target image height")
 
@@ -42,7 +42,8 @@ totalPixels = WIDTH * HEIGHT
 print "%s degrees (lon) by %s degrees (lat) = %s (total)" % (lons, lats, total)
 
 mint = 999
-maxt = 0
+maxt = -999
+ts = []
 
 for month, monthData in enumerate(tData):
     filename = OUTPUT_FILE % str(month+1).zfill(2)
@@ -61,6 +62,7 @@ for month, monthData in enumerate(tData):
                 maxt = t
             if t < mint:
                 mint = t
+            ts.append(t)
             n = norm(t, RANGE[0], RANGE[1])
             color = getColor(GRADIENT, n)
             pixels[x, y] = color
@@ -73,3 +75,4 @@ for month, monthData in enumerate(tData):
     im.save(filename)
 
 print "Range: %s, %s" % (mint, maxt)
+print "Mean: %s" % mean(ts)

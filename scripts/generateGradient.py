@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+
+import argparse
+from pprint import pprint
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-grad', dest="GRADIENT", default="#42a6ff,#89a2b7,#000000,#a05b5b,#fc0000", help="Color gradient")
+parser.add_argument('-width', dest="STEPS", type=int, default=100, help="Steps in gradient")
+
+args = parser.parse_args()
+
+def getColor(grad, amount):
+    gradLen = len(grad)
+    i = (gradLen-1) * amount
+    remainder = i % 1
+    rgb = (0,0,0)
+    if remainder > 0:
+        rgb = lerpColor(grad[int(i)], grad[int(i)+1], remainder)
+    else:
+        rgb = grad[int(i)]
+    return rgb
+
+# Add colors
+def hex2rgb(hex):
+  # "#FFFFFF" -> [1,1,1]
+  return [round(int(hex[i:i+2], 16)/255.0, 6) for i in range(1,6,2)]
+
+def lerp(a, b, amount):
+    return (b-a) * amount + a
+
+def lerpColor(s, f, amount):
+    rgb = [
+      round(s[j] + amount * (f[j]-s[j]), 6)
+      for j in range(3)
+    ]
+    return rgb
+
+GRADIENT = args.GRADIENT.split(",")
+STEPS = args.STEPS
+
+GRADIENT = [hex2rgb(g) for g in GRADIENT]
+
+grad = []
+
+for i in range(STEPS):
+    mu = 1.0 * i / (STEPS-1)
+    grad.append(getColor(GRADIENT, mu))
+
+pprint(grad)

@@ -6,7 +6,7 @@ var CONFIG = {
   },
   "colorKey": {
     "el": "#color-key-canvas",
-    "gradient": "data/colorGradientMagma.json"
+    "gradient": "data/colorGradientAnomaly.json"
   },
   "globes": [
     {
@@ -38,7 +38,7 @@ var CONFIG = {
       ]
     },{
       "el": '#atmosphere-wind',
-      "title": "Wind and air temperature<br />in the troposphere",
+      "title": "Wind and temperature<br />10 km above sea level",
       "data": "data/atmosphere_wind/gfsanl_4_25000.png",
       "meta": "data/atmosphere_wind/gfsanl_4_25000_meta.json",
       "viewAngle": 45,

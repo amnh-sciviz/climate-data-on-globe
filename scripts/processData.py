@@ -24,7 +24,7 @@ parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=240, hel
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=120, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
 parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.03, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2200, help="Number of particles to display")
 parser.add_argument('-rand', dest="RANDOM", type=int, default=1, help="(1) if we should show random particles or (0) particles sorted by velocity")
 
 args = parser.parse_args()
@@ -126,6 +126,7 @@ for month in range(12):
         for row in range(PARTICLES_PER_ROW):
             particleIndex = col * PARTICLES_PER_ROW + row
             if month > 0 and particleIndex not in indices:
+                particles.append({})
                 continue
 
             yp = 1.0 * col / (PARTICLES_PER_COL-1)
@@ -179,7 +180,7 @@ for month in range(12):
             })
 
             sys.stdout.write('\r')
-            sys.stdout.write("%s%%" % round(1.0*particleIndex/PARTICLES*100,1))
+            sys.stdout.write("%s%%" % round(1.0*particleIndex/(PARTICLES-1)*100,1))
             sys.stdout.flush()
 
     # for the first month
