@@ -11,6 +11,16 @@ def clamp(value, low=0.0, high=1.0):
     value = max(value, low)
     return value
 
+def getColor(gradient, mu, start=0.0, end=1.0):
+    gradientLen = len(gradient)
+    start = int(round(start * gradientLen))
+    end = int(round(end * gradientLen))
+    gradient = gradient[start:end]
+
+    index = int(round(mu * (gradientLen-1)))
+    rgb = tuple([int(round(v*255.0)) for v in gradient[index]])
+    return rgb
+
 def lerp(a, b, mu):
     return (b-a) * mu + a
 

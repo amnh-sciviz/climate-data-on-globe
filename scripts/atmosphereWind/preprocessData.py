@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python preprocessData.py -in "../../data/atmosphere_wind/100000/gfsanl_4_%s_0000_000.csv.gz" -out "../../data/atmosphere_wind/gfsanl_4_100000_monthly.json"
+# python preprocessData.py -in "../../data/atmosphere_wind/25000/gfsanl_4_%s_0000_000.csv.gz" -out "../../data/atmosphere_wind/gfsanl_4_25000_monthly.json"
 
 import argparse
 import datetime
@@ -17,8 +17,8 @@ parser = argparse.ArgumentParser()
 # Data: https://nomads.ncdc.noaa.gov/data/gfs4/201602/20160229/
 # Doc: http://www.nco.ncep.noaa.gov/pmb/docs/on388/tableb.html#GRID4
     # 259920-point (720x361) global Lon/Lat grid. (1,1) at (0E, 90N); matrix layout; prime meridian not duplicated
-parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/25000/gfsanl_4_%s_0000_000.csv.gz", help="Input CSV files")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_25000_monthly.json", help="Output json file")
+parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/100000/gfsanl_4_%s_0000_000.csv.gz", help="Input CSV files")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_100000_monthly.json", help="Output json file")
 parser.add_argument('-start', dest="DATE_START", default="2016-01-01", help="Date start")
 parser.add_argument('-end', dest="DATE_END", default="2016-12-31", help="Date end")
 

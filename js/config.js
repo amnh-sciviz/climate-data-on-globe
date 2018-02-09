@@ -20,7 +20,7 @@ var CONFIG = {
       "radius": 0.5,
       "minMag": 0.33,
       "precision": 0.01,
-      "animationMs": 4000,
+      "animationMs": 2000,
       "geojsonLineColor": 0x555555,
       "frames": [
         "data/ocean_currents/temperature/2016-01.png",
@@ -38,16 +38,16 @@ var CONFIG = {
       ]
     },{
       "el": '#atmosphere-wind',
-      "title": "Wind and temperature<br />10 km above sea level",
-      "data": "data/atmosphere_wind/gfsanl_4_25000.png",
-      "meta": "data/atmosphere_wind/gfsanl_4_25000_meta.json",
+      "title": "Wind and temperature<br />10 meters above sea level",
+      "data": "data/atmosphere_wind/gfsanl_4_100000.png",
+      "meta": "data/atmosphere_wind/gfsanl_4_100000_meta.json",
       "viewAngle": 45,
       "near": 0.01,
       "far": 1000,
       "radius": 0.5,
-      "minMag": 0.0,
+      "minMag": 0.33,
       "precision": 0.01,
-      "animationMs": 1000,
+      "animationMs": 2000,
       "geojsonLineColor": 0xdddddd,
       "frames": [
         "data/atmosphere_wind/temperature/2016-01.png",

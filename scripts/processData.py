@@ -14,8 +14,8 @@ import random
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-in', dest="INPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000_monthly.json", help="Input CSV files")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_25000.json", help="Output json file")
+parser.add_argument('-in', dest="INPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_100000_monthly.json", help="Input CSV files")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_100000.json", help="Output json file")
 parser.add_argument('-lon', dest="LON_RANGE", default="0,360", help="Longitude range")
 parser.add_argument('-lat', dest="LAT_RANGE", default="90,-90", help="Latitude range")
 parser.add_argument('-lonsample', dest="LON_RANGE_SAMPLE", default="0,360", help="Longitude range")
@@ -23,8 +23,8 @@ parser.add_argument('-latsample', dest="LAT_RANGE_SAMPLE", default="90,-90", hel
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=240, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=120, help="Particles per col")
 parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
-parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.03, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2200, help="Number of particles to display")
+parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.06, help="Velocity mulitplier")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
 parser.add_argument('-rand', dest="RANDOM", type=int, default=1, help="(1) if we should show random particles or (0) particles sorted by velocity")
 
 args = parser.parse_args()
@@ -89,7 +89,7 @@ print "%s degrees (lon) by %s degrees (lat) = %s (total)" % (lons, lats, total)
 #             mmin = mag
 #
 #         # normal = norm(mag, 0, 3)
-#         normal = norm(mag, 0, 70)
+#         normal = norm(mag, 0, 12)
 #         c = normal * 255.0
 #         c = int(round(c))
 #         pixels[lon, lat] = (c, c, c)
@@ -104,7 +104,7 @@ print "%s degrees (lon) by %s degrees (lat) = %s (total)" % (lons, lats, total)
 # im.save("monthData.png")
 # sys.exit(1)
 
-print "Target particles: %s" % PARTICLES
+print "Sample points: %s" % PARTICLES
 data = []
 
 randomCols = [random.randint(0, PARTICLES_PER_COL-1) for col in range(PARTICLES_PER_COL)]
@@ -216,7 +216,7 @@ for month in range(12):
     #             prev = coordinates[i-1]
     #             p0 = (norm(prev[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(prev[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
     #             p1 = (norm(point[0], LON_RANGE_SAMPLE[0], LON_RANGE_SAMPLE[1], clamp=False) * WIDTH, norm(point[1], LAT_RANGE_SAMPLE[0], LAT_RANGE_SAMPLE[1], clamp=False) * HEIGHT)
-    #             alpha = int(round(norm(point[2], 0, 70) * 255))
+    #             alpha = int(round(norm(point[2], 0, 12) * 255))
     #             # alpha = int(round(norm(point[2], 0, 2) * 255))
     #             draw.line([p0, p1], fill=(255, 255, 255, alpha))
     # del draw

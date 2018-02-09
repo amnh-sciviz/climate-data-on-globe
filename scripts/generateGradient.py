@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import json
 from pprint import pprint
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-grad', dest="GRADIENT", default="#42a6ff,#89a2b7,#000000,#a05b5b,#fc0000", help="Color gradient")
+parser.add_argument('-grad', dest="GRADIENT", default="#42a6ff,#89a2b7,#71597c,#a05b5b,#fc0000", help="Color gradient")
 parser.add_argument('-width', dest="STEPS", type=int, default=100, help="Steps in gradient")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/colorGradientAnomaly.json", help="Output JSON file")
 
 args = parser.parse_args()
 
@@ -47,4 +49,10 @@ for i in range(STEPS):
     mu = 1.0 * i / (STEPS-1)
     grad.append(getColor(GRADIENT, mu))
 
-pprint(grad)
+# pprint(grad)
+
+# Write to file
+print "Writing data to file..."
+with open(args.OUTPUT_FILE, 'w') as f:
+    json.dump(grad, f)
+    print "Wrote data to %s" % args.OUTPUT_FILE
