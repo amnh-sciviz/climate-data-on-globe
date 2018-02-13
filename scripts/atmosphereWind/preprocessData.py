@@ -53,6 +53,7 @@ while date <= dateEnd:
 lons = len(data[0][0][0])
 lats = len(data[0][0])
 total = lons * lats
+halfLon = lons / 2
 print "Lons (%s) x Lats (%s)" % (lons, lats)
 
 print "Calculating means..."
@@ -71,6 +72,10 @@ for m in range(12):
 
     for lat in range(lats):
         for lon in range(lons):
+            if lon < halfLon:
+                lon = lon + halfLon
+            else:
+                lon = lon - halfLon
             u, v, t = uvDataAt(lon, lat, monthData)
             i = lat * lons + lon
             monthUData.append(u)
