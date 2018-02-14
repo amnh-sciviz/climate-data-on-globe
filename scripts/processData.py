@@ -16,7 +16,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_100000_monthly.json", help="Input CSV files")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/atmosphere_wind/gfsanl_4_100000.json", help="Output json file")
-parser.add_argument('-lon', dest="LON_RANGE", default="0,360", help="Longitude range")
+parser.add_argument('-lon', dest="LON_RANGE", default="-180,180", help="Longitude range")
 parser.add_argument('-lat', dest="LAT_RANGE", default="90,-90", help="Latitude range")
 parser.add_argument('-lonsample', dest="LON_RANGE_SAMPLE", default="0,360", help="Longitude range")
 parser.add_argument('-latsample', dest="LAT_RANGE_SAMPLE", default="90,-90", help="Latitude range")

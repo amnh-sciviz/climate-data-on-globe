@@ -1,0 +1,229 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Climate data on a globe</title>
+  <link rel="stylesheet" href="css/vendor/normalize.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <script type="x-shader/x-vertex" id="imageBlurVertexShader">
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+  }
+  </script>
+
+  <!-- <script type="x-shader/x-fragment" id="imageBlurFragmentShader">
+  uniform sampler2D texture;
+  uniform vec2 resolution;
+  uniform float blur;
+  varying vec2 vUv;
+
+  vec4 getBlurColor(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
+    vec4 color = vec4(0.0);
+    vec2 off1 = vec2(1.3846153846) * direction;
+    vec2 off2 = vec2(3.2307692308) * direction;
+    color += texture2D(image, uv) * 0.2270270270;
+    color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
+    color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
+    color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
+    color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
+    return color;
+  }
+
+  void main() {
+    gl_FragColor = getBlurColor(texture, vUv, resolution, vec2(6.0, 6.0));
+  }
+  </script> -->
+
+  <script type="x-shader/x-fragment" id="imageBlurFragmentShader">
+  // http://jsdo.it/takumifukasawa/clcd
+  uniform sampler2D texture;
+  uniform vec2 resolution;
+  uniform float blur;
+  varying vec2 vUv;
+
+  vec4 getBlurColor(vec4 destColor) {
+    const int blurPixel = 20;
+    const int blurW = blurPixel;
+    const int blurH = blurPixel;
+    float maxLevel = float((blurPixel - 1) / 2);
+    float total = 0.0;
+
+    for( int y = 0; y < blurH; ++y ) {
+      for( int x = 0; x < blurW; ++x ) {
+        if( x != 0 || y != 0 ) {
+          int addX = x - (blurW - 1) / 2;
+          int addY = y - (blurH - 1) / 2;
+          float level = max(abs(float(addX)), abs(float(addY))) - 1.0;
+          float b = blur * maxLevel - level;
+          b = clamp(b, 0.0, 1.0);
+          float surroundX = float(addX) * 3.0 / resolution.x;
+          float surroundY = float(addY) * 3.0 / resolution.y;
+          destColor += texture2D(texture, (vUv + vec2(surroundX, surroundY))) * b;
+          total += b;
+        }
+      }
+    }
+    return destColor / (total + 1.0);
+  }
+
+  void main() {
+    vec4 destColor = vec4(0,0,0,0);
+    destColor += texture2D(texture, vUv);
+    destColor = getBlurColor(destColor);
+    gl_FragColor = destColor;
+  }
+  </script>
+
+  <div id="app" class="app"></div>
+
+  <script src="js/vendor/jquery-3.3.1.min.js"></script>
+  <script src="js/vendor/underscore-min.js"></script>
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/vendor/three/OrbitControls.js"></script>
+
+  <script>
+  'use strict';
+
+  var App = (function() {
+    function App(options) {
+      var defaults = {
+        el: '#app',
+        viewAngle: 45,
+        near: 0.01,
+        far: 1000,
+        radius: 0.5
+      };
+      this.opt = $.extend({}, defaults, options);
+      this.init();
+    }
+
+    App.prototype.init = function(){
+      var _this = this;
+
+      this.$el = $(this.opt.el);
+
+      var w = this.$el.width();
+      var h = this.$el.height();
+      var radius = this.opt.radius;
+
+      // init renderer
+      this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+      this.renderer.setClearColor(0x000000, 0);
+      this.renderer.setSize(w, h);
+      this.$el.append(this.renderer.domElement);
+
+      // init scene
+      this.scene = new THREE.Scene();
+
+      // init camera
+      var viewAngle = this.opt.viewAngle;
+      var aspect = w / h;
+      var near = this.opt.near;
+      var far = this.opt.far;
+      this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
+      this.camera.position.z = radius * 4.0;
+
+      // ambient light
+      var aLight = new THREE.AmbientLight(0x888888);
+      this.scene.add(aLight);
+
+      // init controls
+      this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+      this.loadImages();
+
+      this.render();
+    };
+
+    App.prototype.loadImages = function(){
+      var loader = new THREE.TextureLoader();
+      var _this = this;
+
+      var onImageLoaded = function(texture){
+        _this.onImageLoaded(texture);
+      };
+
+      loader.load('data/sstSample.png', onImageLoaded);
+    };
+
+    App.prototype.onImageLoaded = function(texture){
+      var radius = this.opt.radius;
+
+      var uniforms = {
+        texture: {
+          type: 't',
+          value: texture
+        },
+        blur: {
+          type: 'f',
+          value: 1.0
+        },
+        resolution: {
+          type: 'v2',
+          value: new THREE.Vector2(texture.image.width, texture.image.height)
+        }
+      };
+
+      var geo = new THREE.SphereGeometry(radius, 64, 64);
+      var mat = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('imageBlurVertexShader').textContent,
+        fragmentShader: document.getElementById('imageBlurFragmentShader').textContent,
+        transparent: true,
+        blending: THREE.NormalBlending
+      });
+
+      mat.map = texture;
+      mat.map.needsUpdate = true;
+
+      var earth = new THREE.Mesh(geo, mat);
+      this.scene.add(earth);
+
+      this.earth = earth;
+      this.start = new Date();
+    };
+
+    App.prototype.render = function(){
+      var _this = this;
+
+      var now = new Date();
+      var delta = now - this.start;
+      if (delta > 4000 && !this.updated) {
+        this.updateImage();
+      }
+
+      this.renderer.render(this.scene, this.camera);
+      this.controls.update();
+
+      requestAnimationFrame(function(){ _this.render(); });
+    };
+
+    App.prototype.updateImage = function(){
+      var uniforms = this.earth.material.uniforms;
+      var _this = this;
+      var onImageLoaded = function(texture){
+        console.log('updating...');
+        uniforms.texture.value = texture;
+      };
+      var loader = new THREE.TextureLoader();
+      loader.load('data/stSample.png', onImageLoaded);
+      this.updated = true;
+    };
+
+    return App;
+
+  })();
+
+  $(function() {
+    var app = new App({});
+  });
+
+
+  </script>
+</body>
+</html>

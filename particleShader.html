@@ -1,0 +1,246 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Climate data on a globe</title>
+  <link rel="stylesheet" href="css/vendor/normalize.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <script type="x-shader/x-vertex" id="vertexShader">
+  uniform float globalProgress;
+  uniform float animationProgress;
+
+  // offset for animation
+  attribute float offset;
+
+  // a bit of a hack: store position of entire year
+  attribute vec3 jan;
+  attribute vec3 feb;
+  attribute vec3 mar;
+  attribute vec3 apr;
+  attribute vec3 may;
+  attribute vec3 jun;
+  attribute vec3 jul;
+  attribute vec3 aug;
+  attribute vec3 sep;
+  attribute vec3 oct;
+  attribute vec3 nov;
+  attribute vec3 dec;
+
+  // passed to the fragment shader
+  varying vec4 vColor;
+
+  void main() {
+    // animate opacity of color
+    float colorOffset = offset + animationProgress;
+    colorOffset = colorOffset - floor(colorOffset);
+    vColor = vec4(color, 1.0-colorOffset);   // pass the color to the fragment shader
+
+    // interpolate between months
+    vec3 fromPosition;
+    vec3 toPosition;
+    if (globalProgress > 11.0/12.0) { fromPosition = dec; toPosition = jan; }
+    else if (globalProgress > 10.0/12.0) { fromPosition = nov; toPosition = dec; }
+    else if (globalProgress > 9.0/12.0) { fromPosition = oct; toPosition = nov; }
+    else if (globalProgress > 8.0/12.0) { fromPosition = sep; toPosition = oct; }
+    else if (globalProgress > 7.0/12.0) { fromPosition = aug; toPosition = sep; }
+    else if (globalProgress > 6.0/12.0) { fromPosition = jul; toPosition = aug; }
+    else if (globalProgress > 5.0/12.0) { fromPosition = jun; toPosition = jul; }
+    else if (globalProgress > 4.0/12.0) { fromPosition = may; toPosition = jun; }
+    else if (globalProgress > 3.0/12.0) { fromPosition = apr; toPosition = may; }
+    else if (globalProgress > 2.0/12.0) { fromPosition = mar; toPosition = apr; }
+    else if (globalProgress > 1.0/12.0) { fromPosition = feb; toPosition = mar; }
+    else { fromPosition = jan; toPosition = feb; }
+
+    float month = globalProgress * 12.0;
+    float mu = month - floor(month);
+    vec3 myPosition = vec3(
+      mix(fromPosition.x, toPosition.x, mu),
+      mix(fromPosition.y, toPosition.y, mu),
+      mix(fromPosition.z, toPosition.z, mu)
+    );
+
+    // set new position
+    vec4 mvPosition = modelViewMatrix * vec4(myPosition, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentShader">
+  varying vec4 vColor;
+  void main() {
+    gl_FragColor = vColor;
+  }
+  </script>
+
+  <div id="app" class="app"></div>
+
+  <script src="js/vendor/jquery-3.3.1.min.js"></script>
+  <script src="js/vendor/underscore-min.js"></script>
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/vendor/three/OrbitControls.js"></script>
+
+  <script>
+  'use strict';
+
+  var App = (function() {
+    function App(options) {
+      var defaults = {
+        el: '#app',
+        viewAngle: 45,
+        near: 0.01,
+        far: 1000,
+        radius: 0.5,
+        animationMs: 4000,
+        globalMs: 2000
+      };
+      this.opt = $.extend({}, defaults, options);
+      this.init();
+    }
+
+    function toSphere(lon, lat, radius) {
+      var phi = (90-lat) * (Math.PI/180);
+      var theta = (lon+180) * (Math.PI/180);
+      var x = -(radius * Math.sin(phi) * Math.cos(theta));
+      var y = (radius * Math.cos(phi));
+      var z = (radius * Math.sin(phi) * Math.sin(theta));
+      return [x, y, z];
+    }
+
+    App.prototype.init = function(){
+      var _this = this;
+
+      this.$el = $(this.opt.el);
+
+      var w = this.$el.width();
+      var h = this.$el.height();
+      var radius = this.opt.radius;
+
+      // init renderer
+      this.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+      this.renderer.setClearColor(0x000000, 0);
+      this.renderer.setSize(w, h);
+      this.$el.append(this.renderer.domElement);
+
+      // init scene
+      this.scene = new THREE.Scene();
+
+      // init camera
+      var viewAngle = this.opt.viewAngle;
+      var aspect = w / h;
+      var near = this.opt.near;
+      var far = this.opt.far;
+      this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
+      this.camera.position.z = radius * 4.0;
+
+      // ambient light
+      var aLight = new THREE.AmbientLight(0x888888);
+      this.scene.add(aLight);
+
+      // init controls
+      this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+      this.loadLines();
+
+      this.render();
+    };
+
+    App.prototype.loadLines = function(){
+      var radius = this.opt.radius;
+      var positions = [];
+      var offsets = [];
+      var lat = 0;
+      var prev = false;
+
+      // initialize empty months
+      for (var m=0; m<12; m++) {
+        positions.push([]);
+      }
+
+      for (var lon=0; lon<=360; lon++) {
+        var point = toSphere(lon, lat, radius);
+        if (prev) {
+          var offsetPrev = (lon-1)/360.0;
+          var offset = lon/360.0;
+          for (var m=0; m<12; m++) {
+            var zOffset = Math.sin(m/12.0 * Math.PI) * radius * 0.1;
+            positions[m].push(prev[0], prev[1], prev[2]+zOffset);
+            positions[m].push(point[0], point[1], point[2]+zOffset);
+          }
+          offsets.push(offsetPrev);
+          offsets.push(offset);
+        }
+        prev = point;
+      }
+
+      var geo = new THREE.BufferGeometry();
+      var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      geo.addAttribute('position', new THREE.Float32BufferAttribute(positions[0], 3));
+      for (var m=0; m<12; m++) {
+        var name = months[m];
+        geo.addAttribute(name, new THREE.Float32BufferAttribute(positions[m], 3));
+      }
+      geo.addAttribute('offset', new THREE.Float32BufferAttribute(offsets, 1));
+
+      var uniforms = {
+        animationProgress: { type: "f", value: 0.0 },
+        globalProgress: { type: "f", value: 0.0 },
+        color: { type: "c", value: new THREE.Color( 0xffffff ) }
+      };
+
+      var mat = new THREE.ShaderMaterial( {
+        uniforms: uniforms,
+        // attributes: attributes,
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
+        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        transparent: true,
+        vertexColors: THREE.VertexColors
+      });
+      // var mat = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+
+      var line = new THREE.LineSegments(geo, mat);
+
+      this.lineGeo = geo;
+      this.lineMat = mat;
+      this.scene.add(line);
+    };
+
+    App.prototype.render = function(){
+      var _this = this;
+
+      var animationMs = this.opt.animationMs;
+      var globalMs = this.opt.globalMs;
+      var now = new Date();
+      var animationProgress = (now % animationMs) / animationMs;
+      var globalProgress = (now % globalMs) / globalMs;
+
+      this.updateLines(globalProgress, animationProgress);
+
+      this.renderer.render(this.scene, this.camera);
+      this.controls.update();
+
+      requestAnimationFrame(function(){ _this.render(); });
+    };
+
+    App.prototype.updateLines = function(globalProgress, animationProgress){
+      var uniforms = this.lineMat.uniforms;
+      uniforms.globalProgress.value = globalProgress;
+      uniforms.animationProgress.value = animationProgress;
+    };
+
+    return App;
+
+  })();
+
+  $(function() {
+    var app = new App({});
+  });
+
+
+  </script>
+</body>
+</html>
