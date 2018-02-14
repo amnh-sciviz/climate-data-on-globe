@@ -1,0 +1,211 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Climate data on a globe</title>
+  <link rel="stylesheet" href="css/vendor/normalize.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <div id="app" class="app">
+    <div id="globes" class="globes">
+      <div id="globe-left" class="globe"></div>
+      <div id="globe-right" class="globe"></div>
+    </div>
+  </div>
+
+  <video id="video-test" webkit-playsinline style="display: none" autoplay loop>
+    <source src="data/globeTest.mp4" type='video/mp4'>
+  </video>
+
+  <script src="js/vendor/jquery-3.3.1.min.js"></script>
+  <script src="js/vendor/underscore-min.js"></script>
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/vendor/three/OrbitControls.js"></script>
+
+  <script>
+  'use strict';
+
+  var Globe = (function() {
+    function Globe(options) {
+      var defaults = {
+        el: '#globe',
+        viewAngle: 45,
+        near: 0.01,
+        far: 1000,
+        radius: 0.5,
+        offset: 0
+      };
+      this.opt = $.extend({}, defaults, options);
+      this.init();
+    }
+
+    Globe.prototype.init = function(){
+      var _this = this;
+      this.$el = $(this.opt.el);
+      this.video = $(this.opt.video)[0];
+      this.loadVideo();
+    };
+
+    Globe.prototype.ended = function(){
+      return this.video.ended;
+    };
+
+    Globe.prototype.getProgress = function(){
+      var progress = 0;
+      var video = this.video;
+      if (video && video.duration) {
+        progress = video.currentTime / video.duration;
+      }
+      return progress;
+    };
+
+    Globe.prototype.isLoaded = function(){
+      return this.video && this.video.duration;
+    };
+
+    Globe.prototype.loadScene = function(){
+      var _this = this;
+      var w = this.$el.width();
+      var h = this.$el.height();
+      var radius = this.opt.radius;
+
+      // init renderer
+      this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+      this.renderer.setClearColor(0x000000, 0);
+      this.renderer.setSize(w, h);
+      this.$el.append(this.renderer.domElement);
+
+      // init scene
+      this.scene = new THREE.Scene();
+
+      // init camera
+      var viewAngle = this.opt.viewAngle;
+      var aspect = w / h;
+      var near = this.opt.near;
+      var far = this.opt.far;
+      this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
+      this.camera.position.z = radius * 4.0;
+
+      // ambient light
+      // var aLight = new THREE.AmbientLight(0x888888);
+      // this.scene.add(aLight);
+
+      // init controls
+      this.controls = new THREE.OrbitControls(this.camera, $("#globes")[0]);
+
+      // load video texture
+      var video = this.video;
+      var vTexture = new THREE.VideoTexture(video);
+      // vTexture.mapping = THREE.SphericalReflectionMapping;
+      vTexture.minFilter = THREE.LinearFilter;
+      vTexture.magFilter = THREE.LinearFilter;
+      vTexture.format = THREE.RGBFormat;
+      vTexture.repeat.set(1, 0.5);
+      // vTexture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      if (this.opt.offset > 0) vTexture.offset.set(0, this.opt.offset);
+
+      // init globe with video texture
+      var geometry = new THREE.SphereGeometry(radius, 64, 64);
+      var material = new THREE.MeshBasicMaterial({map: vTexture, overdraw: true});
+      var earth = new THREE.Mesh(geometry, material);
+
+      earth.material.map.needsUpdate = true;
+      this.scene.add(earth);
+
+      this.ready = true;
+    };
+
+    Globe.prototype.loadVideo = function(){
+      var _this = this;
+      var promise = $.Deferred();
+
+      this.video.addEventListener('loadeddata', function() {
+        console.log('Video loaded');
+        promise.resolve();
+        _this.loadScene();
+
+      }, false);
+
+      return promise;
+    };
+
+    Globe.prototype.onResize = function(){
+      var w = this.$el.width();
+      var h = this.$el.height();
+
+      this.renderer.setSize(w, h);
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+    };
+
+    Globe.prototype.render = function(){
+      var _this = this;
+
+      if (!this.ready) return false;
+
+      this.renderer.render(this.scene, this.camera);
+      this.controls.update();
+    };
+
+    Globe.prototype.setSpeed = function(speed){
+      if (this.video) this.video.playbackRate = speed;
+    };
+
+    return Globe;
+
+  })();
+
+  var App = (function() {
+    function App(options) {
+      var defaults = {};
+      this.opt = $.extend({}, defaults, options);
+      this.init();
+    }
+
+    App.prototype.init = function(){
+      var _this = this;
+
+      var leftGlobe = new Globe({el: "#globe-left", video: "#video-test"});
+      var rightGlobe = new Globe({el: "#globe-right", video: "#video-test", offset: 0.5});
+      this.globes = [leftGlobe, rightGlobe];
+
+      this.loadListeners();
+      this.render();
+    };
+
+    App.prototype.loadListeners = function(){
+      var _this = this;
+
+      var globes = this.globes;
+
+      $(window).on('resize', function(){
+        _.each(globes, function(globe){
+          globe.onResize();
+        });
+      });
+    };
+
+    App.prototype.render = function(){
+      var _this = this;
+
+      _.each(this.globes, function(globe){
+        globe.render();
+      });
+
+      requestAnimationFrame(function(){ _this.render(); });
+    };
+
+    return App;
+
+  })();
+
+  $(function() {
+    var app = new App({});
+  });
+
+  </script>
+</body>
+</html>
