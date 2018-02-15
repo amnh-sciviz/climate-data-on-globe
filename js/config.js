@@ -6,7 +6,7 @@ var CONFIG = {
   },
   "colorKey": {
     "el": "#color-key-canvas",
-    "gradient": "data/colorGradientAnomaly.json"
+    "gradient": "data/colorGradientRainbow.json"
   },
   "globes": [
     {
@@ -48,7 +48,7 @@ var CONFIG = {
       "minMag": 0.33,
       "precision": 0.01,
       "animationMs": 2000,
-      "geojsonLineColor": 0xdddddd,
+      "geojsonLineColor": 0x443820,
       "frames": [
         "data/atmosphere_wind/temperature/2016-01.png",
         "data/atmosphere_wind/temperature/2016-02.png",

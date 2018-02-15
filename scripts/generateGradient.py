@@ -6,9 +6,9 @@ from pprint import pprint
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-grad', dest="GRADIENT", default="#42a6ff,#89a2b7,#71597c,#a05b5b,#fc0000", help="Color gradient")
+parser.add_argument('-grad', dest="GRADIENT", default="#42a6ff,#5994af,#9e944f,#c17700,#fc0000", help="Color gradient")
 parser.add_argument('-width', dest="STEPS", type=int, default=100, help="Steps in gradient")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/colorGradientAnomaly.json", help="Output JSON file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/colorGradientRainbow.json", help="Output JSON file")
 
 args = parser.parse_args()
 

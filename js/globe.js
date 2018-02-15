@@ -100,8 +100,8 @@ var Globe = (function() {
     this.camera.position.z = radius * 4.0;
 
     // ambient light
-    var aLight = new THREE.AmbientLight(0x888888);
-    this.scene.add(aLight);
+    // var aLight = new THREE.AmbientLight(0x888888);
+    // this.scene.add(aLight);
 
     // init controls
     this.controls = new THREE.OrbitControls(this.camera, $("#globes")[0]);

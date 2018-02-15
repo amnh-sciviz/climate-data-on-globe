@@ -6,6 +6,8 @@ import datetime
 import json
 from lib import *
 import math
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 import os
 from PIL import Image, ImageDraw
 from pprint import pprint
@@ -15,8 +17,8 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../../data/atmosphere_wind/gfsanl_4_100000_monthly.json", help="Input json file")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../../data/atmosphere_wind/temperature/2016-%s.png", help="Output image file")
-parser.add_argument('-grad', dest="GRADIENT_FILE", default="../../data/colorGradientAnomaly.json", help="Color gradient json file")
-parser.add_argument('-range', dest="RANGE", default="-35.0,40.0", help="Temperature range")
+parser.add_argument('-grad', dest="GRADIENT_FILE", default="../../data/colorGradientRainbow.json", help="Color gradient json file")
+parser.add_argument('-range', dest="RANGE", default="-20.0,40.0", help="Temperature range")
 parser.add_argument('-width', dest="WIDTH", type=int, default=1024, help="Target image width")
 parser.add_argument('-height', dest="HEIGHT", type=int, default=512, help="Target image height")
 
@@ -49,34 +51,53 @@ mint = 999
 maxt = -999
 ts = []
 
-for month, monthData in enumerate(tData):
-    filename = OUTPUT_FILE % str(month+1).zfill(2)
-    print "Processing %s" % filename
+params = []
 
-    im = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+for month, monthData in enumerate(tData):
+    params.append({
+        "index": month,
+        "fileOut": OUTPUT_FILE % str(month+1).zfill(2),
+        "data": monthData,
+        "height": HEIGHT,
+        "width": WIDTH,
+        "gradient": GRADIENT,
+        "range": RANGE,
+        "lats": lats,
+        "lons": lons
+    })
+
+def processImage(p):
+    fileOut = p["fileOut"]
+    data = p["data"]
+    width = p["width"]
+    height = p["height"]
+    gradient = p["gradient"]
+    vRange = p["range"]
+    lats = p["lats"]
+    lons = p["lons"]
+
+    print "Processing %s" % fileOut
+
+    im = Image.new("RGB", (width, height), (0, 0, 0))
     pixels = im.load()
 
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            lat = int(round((1.0 * y / (HEIGHT-1)) * (lats-1)))
-            lon = int(round((1.0 * x / (WIDTH-1)) * (lons-1)))
+    for y in range(height):
+        for x in range(width):
+            lat = int(round((1.0 * y / (height-1)) * (lats-1)))
+            lon = int(round((1.0 * x / (width-1)) * (lons-1)))
             index = lat * lons + lon
-            t = monthData[index]
-            if t > maxt:
-                maxt = t
-            if t < mint:
-                mint = t
-            ts.append(t)
-            n = norm(t, RANGE[0], RANGE[1])
-            color = getColor(GRADIENT, n)
+            t = data[index]
+            n = norm(t, vRange[0], vRange[1])
+            color = getColor(gradient, n)
             pixels[x, y] = color
 
-            i = y * WIDTH + x
-            sys.stdout.write('\r')
-            sys.stdout.write("%s%%" % round(1.0*i/totalPixels*100,1))
-            sys.stdout.flush()
+    im.save(fileOut)
+    print "Saved %s" % fileOut
 
-    im.save(filename)
+print "Processing data..."
+pool = ThreadPool()
+pool.map(processImage, params)
+pool.close()
+pool.join()
 
-print "Range: %s, %s" % (mint, maxt)
-print "Mean: %s" % mean(ts)
+print "Done."
