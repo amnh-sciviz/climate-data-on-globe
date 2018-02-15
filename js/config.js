@@ -20,7 +20,7 @@ var CONFIG = {
       "radius": 0.5,
       "minMag": 0.33,
       "precision": 0.01,
-      "animationMs": 2000,
+      "animationMs": 3000,
       "geojsonLineColor": 0x555555,
       "frames": [
         "data/ocean_currents/temperature/2016-01.png",
@@ -47,7 +47,7 @@ var CONFIG = {
       "radius": 0.5,
       "minMag": 0.33,
       "precision": 0.01,
-      "animationMs": 2000,
+      "animationMs": 3000,
       "geojsonLineColor": 0x443820,
       "frames": [
         "data/atmosphere_wind/temperature/2016-01.png",
