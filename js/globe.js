@@ -97,7 +97,7 @@ var Globe = (function() {
     var near = this.opt.near;
     var far = this.opt.far;
     this.camera = new THREE.PerspectiveCamera(viewAngle, w / h, near, far);
-    this.camera.position.z = radius * 4.0;
+    this.camera.position.z = radius * 3.333;
 
     // ambient light
     // var aLight = new THREE.AmbientLight(0x888888);
@@ -157,6 +157,9 @@ var Globe = (function() {
     hex = 0xff0000;
     var southArrow = new THREE.ArrowHelper(dir, origin, length, hex);
     this.earth.add(southArrow);
+
+    // this.earth.rotation.z = 23.43703 * Math.PI / 180; // earth tilt
+
     this.scene.add(this.earth);
   };
 

@@ -22,9 +22,9 @@ parser.add_argument('-lonsample', dest="LON_RANGE_SAMPLE", default="0,360", help
 parser.add_argument('-latsample', dest="LAT_RANGE_SAMPLE", default="90,-90", help="Latitude range")
 parser.add_argument('-ppr', dest="PARTICLES_PER_ROW", type=int, default=240, help="Particles per row")
 parser.add_argument('-ppc', dest="PARTICLES_PER_COL", type=int, default=120, help="Particles per col")
-parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=100, help="Points per particle")
+parser.add_argument('-ppp', dest="POINTS_PER_PARTICLE", type=int, default=72, help="Points per particle")
 parser.add_argument('-vel', dest="VELOCITY_MULTIPLIER", type=float, default=0.06, help="Velocity mulitplier")
-parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=2000, help="Number of particles to display")
+parser.add_argument('-dt', dest="DISPLAY_PARTICLES", type=int, default=3000, help="Number of particles to display")
 parser.add_argument('-rand', dest="RANDOM", type=int, default=1, help="(1) if we should show random particles or (0) particles sorted by velocity")
 
 args = parser.parse_args()
